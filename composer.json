@@ -27,8 +27,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Linna\\Authentication\\": "src/",
-            "Linna\\Authorization\\": "src/"
+            "Linna\\Authentication\\": "src/Authentication/",
+            "Linna\\Authorization\\": "src/Authorization/"
         }
     },
     "autoload-dev": {
