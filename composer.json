@@ -1,0 +1,39 @@
+{
+    "name": "linna/auth-mapper-mysql",
+    "description": "Concrete mapper implementation, with mysql, of the authentication and authorization interfaces.",
+    "keywords": [
+        "framework",
+        "mysql",
+        "data mapper",
+        "php"
+    ],
+    "homepage": "https://github.com/linna",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sebastian Rapetti",
+            "email": "sebastian.rapetti@alice.it"
+        }
+    ],
+    "require": {
+        "php": "^7.1"
+    },
+    "require-dev": {
+        "infection/infection": "^0.10",
+        "mongodb/mongodb": "^1.2",
+        "phpstan/phpstan": "^0.10",
+        "phpunit/phpunit": "^7.0",
+        "linna/framework": "^0.24"
+    },
+    "autoload": {
+        "psr-4": {
+            "Linna\\Authentication\\": "src/",
+            "Linna\\Authorization\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": { 
+            "Linna\\Test\\": "tests"
+        }
+    }
+}
