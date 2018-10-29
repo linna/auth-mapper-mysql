@@ -12,13 +12,14 @@ declare(strict_types=1);
 namespace Linna\Authorization;
 
 use Linna\Authentication\Password;
+use Linna\Authentication\User;
+use Linna\Authentication\UserMapper;
 use Linna\Authorization\EnhancedUser;
 use Linna\Authorization\EnhancedUserMapperInterface;
 use Linna\Authorization\Permission;
 use Linna\Authorization\PermissionMapperInterface;
 use Linna\Authorization\Role;
 use Linna\Authorization\RoleToUserMapperInterface;
-use Linna\Authentication\User;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
