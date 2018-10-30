@@ -1,0 +1,15 @@
+language: php
+php:
+- 7.1
+- 7.2
+
+services:
+- mysql
+
+before_script:
+- mysql -e 'create database linna_db;'
+- mysql -u root linna_db < tests/linna_db_mysql.sql
+- composer install
+
+script:
+- ./vendor/bin/phpunit

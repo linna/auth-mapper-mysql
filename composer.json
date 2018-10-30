@@ -23,7 +23,7 @@
         "mongodb/mongodb": "^1.2",
         "phpstan/phpstan": "^0.10",
         "phpunit/phpunit": "^7.0",
-        "linna/framework": "^0.24"
+        "linna/framework": "dev-b0.25.0"
     },
     "autoload": {
         "psr-4": {
@@ -33,7 +33,7 @@
     },
     "autoload-dev": {
         "psr-4": { 
-            "Linna\\Test\\": "tests"
+            "Linna\\Test\\":  ["tests/Authentication", "tests/Authorization"]
         }
     }
 }
