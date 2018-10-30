@@ -20,6 +20,6 @@
     <php>
         <var name="pdo_mysql_dsn" value="mysql:host=localhost;dbname=linna_db;charset=utf8mb4"/> 
         <var name="pdo_mysql_user" value="root" />
-        <var name="pdo_mysql_password" value="cagiva" />
+        <var name="pdo_mysql_password" value="" />
     </php>
 </phpunit>
