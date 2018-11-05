@@ -14,18 +14,12 @@ namespace Linna\Authorization;
 use Linna\Authentication\Password;
 use Linna\Authentication\User;
 use Linna\Authentication\UserMapper;
-use Linna\Authorization\EnhancedUser;
-use Linna\Authorization\EnhancedUserMapperInterface;
-use Linna\Authorization\Permission;
-use Linna\Authorization\PermissionMapperInterface;
-use Linna\Authorization\Role;
-use Linna\Authorization\RoleToUserMapperInterface;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
-use PDOStatement;
 use PDOException;
+use PDOStatement;
 
 /**
  * EnhancedUserMapper.
@@ -235,7 +229,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
             $tmp->description = $user->description;
             $tmp->email = $user->email;
             $tmp->password = $user->password;
-            $tmp->active =(int) $user->active;
+            $tmp->active = (int) $user->active;
             $tmp->created = $user->created;
             $tmp->lastUpdate = $user->lastUpdate;
 

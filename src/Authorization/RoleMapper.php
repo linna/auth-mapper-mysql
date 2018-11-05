@@ -12,19 +12,13 @@ declare(strict_types=1);
 namespace Linna\Authorization;
 
 use Linna\Authentication\UserMapperInterface;
-use Linna\Authorization\EnhancedUser;
-use Linna\Authorization\Permission;
-use Linna\Authorization\PermissionMapperInterface;
-use Linna\Authorization\Role;
-use Linna\Authorization\RoleMapperInterface;
-use Linna\Authorization\RoleToUserMapperInterface;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\MapperAbstract;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
-use PDOStatement;
 use PDOException;
+use PDOStatement;
 
 /**
  * Role Mapper.
@@ -388,7 +382,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
             $pdos->bindParam(':active', $role->active, PDO::PARAM_INT);
             $pdos->execute();
 
-            $role->setId((int)$this->pdo->lastInsertId());
+            $role->setId((int) $this->pdo->lastInsertId());
         } catch (RuntimeException $e) {
             echo 'Insert not compled, ', $e->getMessage(), "\n";
         }

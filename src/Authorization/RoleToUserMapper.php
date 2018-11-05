@@ -12,9 +12,6 @@ declare(strict_types=1);
 namespace Linna\Authorization;
 
 use Linna\Authentication\Password;
-use Linna\Authorization\EnhancedUser;
-use Linna\Authorization\Role;
-use Linna\Authorization\RoleToUserMapperInterface;
 use Linna\Storage\ExtendedPDO;
 use PDO;
 

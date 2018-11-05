@@ -12,9 +12,6 @@ declare(strict_types=1);
 namespace Linna\Authentication;
 
 use InvalidArgumentException;
-use Linna\Authentication\Password;
-use Linna\Authentication\User;
-use Linna\Authentication\UserMapperInterface;
 use Linna\DataMapper\DomainObjectAbstract;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\MapperAbstract;
@@ -137,7 +134,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
             $pdos->bindParam(':password', $user->password, PDO::PARAM_STR);
             $pdos->execute();
 
-            $user->setId((int)$this->pdo->lastInsertId());
+            $user->setId((int) $this->pdo->lastInsertId());
         } catch (RuntimeException $e) {
             echo 'Insert not compled, ', $e->getMessage(), "\n";
         }
