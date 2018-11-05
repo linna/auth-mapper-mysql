@@ -11,6 +11,12 @@ declare(strict_types=1);
 
 namespace Linna\Tests;
 
+use Linna\Authentication\Password;
+use Linna\Authorization\EnhancedUserMapper;
+use Linna\Authorization\PermissionMapper;
+use Linna\Authorization\RoleToUserMapper;
+use Linna\Storage\StorageFactory;
+use PDO;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -18,4 +24,42 @@ use PHPUnit\Framework\TestCase;
  */
 class EnhancedUserMapperTest extends TestCase
 {
+    /**
+     * @var EnhancedUserMapper
+     */
+    protected $enhancedUserMapper;
+
+    /**
+     * Setup.
+     */
+    public function setUp(): void
+    {
+        $options = [
+            'dsn'      => $GLOBALS['pdo_mysql_dsn'],
+            'user'     => $GLOBALS['pdo_mysql_user'],
+            'password' => $GLOBALS['pdo_mysql_password'],
+            'options'  => [
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_PERSISTENT         => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci',
+            ],
+        ];
+
+        $pdo = (new StorageFactory('pdo', $options))->get();
+        $password = new Password();
+
+        $permissionMapper = new PermissionMapper($pdo);
+        $role2userMapper = new RoleToUserMapper($pdo, $password);
+
+        $this->enhancedUserMapper = new EnhancedUserMapper($pdo, $password, $permissionMapper, $role2userMapper);
+    }
+
+    /**
+     * Test new instance.
+     */
+    public function testNewInstance()
+    {
+        $this->assertInstanceOf(EnhancedUserMapper::class, $this->enhancedUserMapper);
+    }
 }
