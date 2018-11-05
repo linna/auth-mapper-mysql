@@ -12,8 +12,6 @@ declare(strict_types=1);
 namespace Linna\Authentication;
 
 use InvalidArgumentException;
-use Linna\Authentication\EnhancedAuthenticationMapperInterface;
-use Linna\Authentication\LoginAttempt;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\MapperAbstract;
 use Linna\DataMapper\NullDomainObject;
@@ -88,7 +86,6 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      * @param string $userName      User name
      * @param int    $timeInSeconds Attempts in the last specified seconds
      */
-
     public function fetchAttemptsWithSameUser(string $userName, int $timeInSeconds): int
     {
         $pdos = $this->pdo->prepare('SELECT count(user_name) as attempts FROM login_attempt WHERE user_name = :user_name AND date_time > :time');
@@ -144,7 +141,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     }
 
     /**
-     * Remove old login attempts
+     * Remove old login attempts.
      *
      * @param int $timeInSeconds
      */
@@ -185,7 +182,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
             $pdos->execute();
 
-            $loginAttempt->setId((int)$this->pdo->lastInsertId());
+            $loginAttempt->setId((int) $this->pdo->lastInsertId());
             //return (int) $this->pdo->lastInsertId();
         } catch (RuntimeException $e) {
             echo 'Insert not compled, ', $e->getMessage(), "\n";

@@ -12,10 +12,6 @@ declare(strict_types=1);
 namespace Linna\Authorization;
 
 use InvalidArgumentException;
-use Linna\Authorization\EnhancedUser;
-use Linna\Authorization\Permission;
-use Linna\Authorization\PermissionMapperInterface;
-use Linna\Authorization\Role;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\MapperAbstract;
 use Linna\DataMapper\NullDomainObject;
@@ -225,7 +221,6 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         return $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
     }
 
-
     /**
      * {@inheritdoc}
      */
@@ -300,7 +295,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
             $pdos->bindParam(':description', $permission->description, PDO::PARAM_STR);
             $pdos->execute();
 
-            $permission->setId((int)$this->pdo->lastInsertId());
+            $permission->setId((int) $this->pdo->lastInsertId());
         } catch (RuntimeException $e) {
             echo 'Insert not compled, ', $e->getMessage(), "\n";
         }
