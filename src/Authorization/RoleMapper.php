@@ -73,7 +73,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         $users = $this->roleToUserMapper->fetchByRoleId($roleId);
         $permissions = $this->permissionMapper->fetchByRoleId($roleId);
 
-        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, name, description, active, last_update AS lastUpdate FROM role WHERE role_id = :id');
+        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, role_id AS rId, name, description, active, last_update AS lastUpdate FROM role WHERE role_id = :id');
         $pdos->bindParam(':id', $roleId, PDO::PARAM_INT);
         $pdos->execute();
 
@@ -93,7 +93,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, name, description, active, last_update AS lastUpdate FROM role');
+        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, role_id AS rId, name, description, active, last_update AS lastUpdate FROM role');
         $pdos->execute();
 
         return $this->roleCompositor($pdos);
@@ -104,7 +104,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, name, description, active, last_update AS lastUpdate FROM role LIMIT :offset, :rowcount');
+        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, role_id AS rId, name, description, active, last_update AS lastUpdate FROM role LIMIT :offset, :rowcount');
         $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
         $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
         $pdos->execute();
@@ -126,7 +126,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     public function fetchByPermissionId(int $permissionId): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT r.role_id AS objectId, r.name, r.description, r.active, r.last_update AS lastUpdate
+        SELECT r.role_id AS objectId, r.role_id AS rId, r.name, r.description, r.active, r.last_update AS lastUpdate
         FROM role AS r
         INNER JOIN role_permission AS rp
         ON r.role_id = rp.role_id
@@ -162,7 +162,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     public function fetchByUserId(int $userId): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT r.role_id AS objectId, r.name, r.description, r.active, r.last_update AS lastUpdate
+        SELECT r.role_id AS objectId, r.role_id AS rId, r.name, r.description, r.active, r.last_update AS lastUpdate
         FROM role AS r
         INNER JOIN user_role AS ur
         ON r.role_id = ur.role_id
@@ -209,7 +209,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
             $tmp->name = $role->name;
             $tmp->lastUpdate = $role->lastUpdate;
 
-            $roles[] = $tmp;
+            $roles[$role->objectId] = $tmp;
         }
 
         return $roles;

@@ -64,7 +64,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         $roles = $this->roleToUserMapper->fetchByUserId($userId);
         $permissions = $this->permissionMapper->fetchByUserId($userId);
 
-        $pdos = $this->pdo->prepare('SELECT user_id AS objectId, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user WHERE user_id = :id');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE user_id = :id");
         $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
         $pdos->execute();
 
@@ -98,7 +98,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare('SELECT user_id AS objectId, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user ORDER BY name ASC');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY name ASC");
         $pdos->execute();
 
         return $this->EnhancedUserCompositor($pdos);
@@ -109,7 +109,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare('SELECT user_id AS objectId, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user ORDER BY name ASC LIMIT :offset, :rowcount');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY name ASC LIMIT :offset, :rowcount");
 
         $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
         $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
@@ -132,9 +132,9 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     public function fetchByPermissionId(int $permissionId): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT u.user_id AS objectId, u.uuid, u.name, u.email, u.description, 
+        SELECT u.user_id AS objectId, u.user_id AS rId, u.uuid, u.name, u.email, u.description, 
         u.password, u.active, u.created, u.last_update AS lastUpdate 
-        FROM user u
+        FROM user AS u
         INNER JOIN user_permission AS up
         ON u.user_id = up.user_id
         WHERE up.permission_id = :id');
@@ -169,7 +169,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     public function fetchByRoleId(int $roleId): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT u.user_id AS objectId, u.uuid, u.name, u.email, u.description, 
+        SELECT u.user_id AS objectId, u.user_id AS rId, u.uuid, u.name, u.email, u.description, 
         u.password, u.active, u.created, u.last_update AS lastUpdate
         FROM user AS u
         INNER JOIN user_role AS ur 
@@ -188,7 +188,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     public function fetchByRoleName(string $roleName): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT u.user_id AS objectId, u.uuid, u.name, u.email, u.description, 
+        SELECT u.user_id AS objectId, u.user_id AS rId, u.uuid, u.name, u.email, u.description, 
         u.password, u.active, u.created, u.last_update AS lastUpdate
         FROM user AS u
         INNER JOIN user_role AS ur 
@@ -233,7 +233,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
             $tmp->created = $user->created;
             $tmp->lastUpdate = $user->lastUpdate;
 
-            $users[] = $tmp;
+            $users[$user->objectId] = $tmp;
         }
 
         return $users;

@@ -30,6 +30,12 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     protected $pdo;
 
     /**
+     * @var string Costant part of SELECT query
+     */
+    protected $baseQuery = 'SELECT login_attempt_id AS objectId, login_attempt_id AS rId, user_name AS userName, session_id AS sessionId, ip, date_time AS when, last_update AS lastUpdate FROM login_attempt';
+
+
+    /**
      * Constructor.
      *
      * @param ExtendedPDO $pdo
@@ -44,7 +50,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      */
     public function fetchById(int $loginAttemptId): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare('SELECT login_attempt_id AS objectId, user_name AS userName, session_id AS sessionId, ip, date_time AS when, last_update AS lastUpdate FROM login_attempt WHERE login_attempt_id = :id');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE login_attempt_id = :id");
 
         $pdos->bindParam(':id', $loginAttemptId, PDO::PARAM_INT);
         $pdos->execute();
@@ -59,7 +65,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare('SELECT login_attempt_id AS objectId, user_name AS userName, session_id AS sessionId, ip, date_time AS when, last_update AS lastUpdate FROM login_attempt');
+        $pdos = $this->pdo->prepare($this->baseQuery);
 
         $pdos->execute();
 
@@ -71,7 +77,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare('SELECT login_attempt_id AS objectId, user_name AS userName, session_id AS sessionId, ip, date_time AS when, last_update AS lastUpdate FROM login_attempt ORDER BY date_time ASC LIMIT :offset, :rowcount');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY date_time ASC LIMIT :offset, :rowcount");
 
         $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
         $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
@@ -183,7 +189,6 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
             $pdos->execute();
 
             $loginAttempt->setId((int) $this->pdo->lastInsertId());
-            //return (int) $this->pdo->lastInsertId();
         } catch (RuntimeException $e) {
             echo 'Insert not compled, ', $e->getMessage(), "\n";
         }

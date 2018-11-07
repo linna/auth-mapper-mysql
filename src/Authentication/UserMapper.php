@@ -36,6 +36,11 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
     protected $pdo;
 
     /**
+     * @var string Costant part of SELECT query
+     */
+    protected $baseQuery = 'SELECT user_id AS objectId, user_id AS rId, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user';
+
+    /**
      * Constructor.
      *
      * @param ExtendedPDO $pdo
@@ -52,7 +57,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     public function fetchById(int $userId): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare('SELECT user_id AS objectId, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user WHERE user_id = :id');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE user_id = :id");
 
         $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
         $pdos->execute();
@@ -71,7 +76,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     public function fetchByName(string $userName): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare('SELECT user_id AS objectId, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user WHERE md5(name) = :name');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE md5(name) = :name");
 
         $hashedUserName = md5($userName);
 
@@ -88,11 +93,13 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare('SELECT user_id AS objectId, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user ORDER BY name ASC');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY name ASC");
 
         $pdos->execute();
 
-        return $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
+        $array = $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
+
+        return array_combine(array_column($array, 'rId'), $array);
     }
 
     /**
@@ -100,13 +107,15 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare('SELECT user_id AS objectId, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user ORDER BY name ASC LIMIT :offset, :rowcount');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY name ASC LIMIT :offset, :rowcount");
 
         $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
         $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
         $pdos->execute();
 
-        return $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
+        $array = $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
+
+        return array_combine(array_column($array, 'rId'), $array);
     }
 
     /**
