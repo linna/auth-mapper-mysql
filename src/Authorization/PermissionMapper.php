@@ -132,7 +132,9 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         $pdos->bindParam(':id', $roleId, PDO::PARAM_INT);
         $pdos->execute();
 
-        return $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+
+        return array_combine(array_column($array, 'rId'), $array);
     }
 
     /**
@@ -152,7 +154,9 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         $pdos->bindParam(':name', $roleName, PDO::PARAM_STR);
         $pdos->execute();
 
-        return $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+
+        return array_combine(array_column($array, 'rId'), $array);
     }
 
     /**
@@ -190,7 +194,9 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
         $pdos->execute();
 
-        return $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+
+        return array_combine(array_column($array, 'rId'), $array);
     }
 
     /**
@@ -222,7 +228,9 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         $pdos->bindParam(':name', $userName, PDO::PARAM_STR);
         $pdos->execute();
 
-        return $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+
+        return array_combine(array_column($array, 'rId'), $array);
     }
 
     /**
