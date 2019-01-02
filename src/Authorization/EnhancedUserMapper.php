@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Linna\Authorization;
 
+use InvalidArgumentException;
 use Linna\Authentication\Password;
 use Linna\Authentication\User;
 use Linna\Authentication\UserMapper;
@@ -32,7 +33,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     protected $permissionMapper;
 
     /**
-     * @var RoleMapperInterface Role Mapper
+     * @var RoleToUserMapperInterface Role to user Mapper
      */
     protected $roleToUserMapper;
 

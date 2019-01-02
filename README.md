@@ -13,6 +13,8 @@
 <div align="center">
 
 [![Build Status](https://travis-ci.org/linna/auth-mapper-mysql.svg?branch=master)](https://travis-ci.org/linna/auth-mapper-mysql)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/linna/auth-mapper-mysql/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/linna/auth-mapper-mysql/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/linna/auth-mapper-mysql/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/linna/auth-mapper-mysql/?branch=master)
 [![StyleCI](https://github.styleci.io/repos/155237916/shield?branch=master&style=flat)](https://github.styleci.io/repos/155237916)
 [![PDS Skeleton](https://img.shields.io/badge/pds-skeleton-blue.svg?style=flat)](https://github.com/php-pds/skeleton)
 [![PHP 7.1](https://img.shields.io/badge/PHP-7.1-8892BF.svg)](http://php.net)

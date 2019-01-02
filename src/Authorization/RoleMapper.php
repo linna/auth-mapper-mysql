@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Linna\Authorization;
 
+use InvalidArgumentException;
 use Linna\Authentication\UserMapperInterface;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\MapperAbstract;
@@ -19,6 +20,7 @@ use Linna\Storage\ExtendedPDO;
 use PDO;
 use PDOException;
 use PDOStatement;
+use RuntimeException;
 
 /**
  * Role Mapper.
