@@ -32,8 +32,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     /**
      * @var string Costant part of SELECT query
      */
-    protected $baseQuery = 'SELECT login_attempt_id AS objectId, login_attempt_id AS rId, user_name AS userName, session_id AS sessionId, ip, date_time AS when, last_update AS lastUpdate FROM login_attempt';
-
+    protected $baseQuery = 'SELECT login_attempt_id AS objectId, login_attempt_id AS rId, user_name AS userName, session_id AS sessionId, ip, date_time AS "when", last_update AS lastUpdate FROM login_attempt';
 
     /**
      * Constructor.
@@ -46,7 +45,11 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     }
 
     /**
-     * {@inheritdoc}
+     * Fetch a login attempt by id.
+     *
+     * @param int $loginAttemptId
+     *
+     * @return DomainObjectInterface
      */
     public function fetchById(int $loginAttemptId): DomainObjectInterface
     {
@@ -61,7 +64,9 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     }
 
     /**
-     * {@inheritdoc}
+     * Fetch all login attempts stored in data base.
+     *
+     * @return array
      */
     public function fetchAll(): array
     {
@@ -69,11 +74,18 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $pdos->execute();
 
-        return $pdos->fetchAll(PDO::FETCH_CLASS, LoginAttempt::class);
+        $array = $pdos->fetchAll(PDO::FETCH_CLASS, LoginAttempt::class);
+
+        return array_combine(array_column($array, 'rId'), $array);
     }
 
     /**
-     * {@inheritdoc}
+     * Fetch login attempt with limit.
+     *
+     * @param int $offset   Offset of the first row to return
+     * @param int $rowCount Maximum number of rows to return
+     *
+     * @return array
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
@@ -83,7 +95,9 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
         $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
         $pdos->execute();
 
-        return $pdos->fetchAll(PDO::FETCH_CLASS, LoginAttempt::class);
+        $array = $pdos->fetchAll(PDO::FETCH_CLASS, LoginAttempt::class);
+
+        return array_combine(array_column($array, 'rId'), $array);
     }
 
     /**
@@ -91,6 +105,8 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      *
      * @param string $userName      User name
      * @param int    $timeInSeconds Attempts in the last specified seconds
+     *
+     * @return int
      */
     public function fetchAttemptsWithSameUser(string $userName, int $timeInSeconds): int
     {
@@ -111,6 +127,8 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      *
      * @param string $sessionId     Session id
      * @param int    $timeInSeconds Attempts in the last specified seconds
+     *
+     * @return int
      */
     public function fetchAttemptsWithSameSession(string $sessionId, int $timeInSeconds): int
     {
@@ -131,6 +149,8 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      *
      * @param string $ipAddress     Ip address
      * @param int    $timeInSeconds Attempts in the last specified seconds
+     *
+     * @return int
      */
     public function fetchAttemptsWithSameIp(string $ipAddress, int $timeInSeconds): int
     {
@@ -150,6 +170,8 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      * Remove old login attempts.
      *
      * @param int $timeInSeconds
+     *
+     * @return bool
      */
     public function deleteOldLoginAttempts(int $timeInSeconds): bool
     {
@@ -164,7 +186,9 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     }
 
     /**
-     * {@inheritdoc}
+     * Create a new instance of a LoginAttempt.
+     *
+     * @return DomainObjectInterface
      */
     protected function concreteCreate(): DomainObjectInterface
     {
@@ -172,7 +196,11 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     }
 
     /**
-     * {@inheritdoc}
+     * Insert a LoginAttempt object to persistent storage.
+     * User object passed as reference, gain the id of the persistent
+     * storage record.
+     *
+     * @param DomainObjectInterface $loginAttempt
      */
     protected function concreteInsert(DomainObjectInterface &$loginAttempt)
     {
@@ -195,7 +223,9 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     }
 
     /**
-     * {@inheritdoc}
+     * Update a LoginAttempt object in persistent storage.
+     *
+     * @param DomainObjectInterface $loginAttempt
      */
     protected function concreteUpdate(DomainObjectInterface $loginAttempt)
     {
@@ -220,7 +250,11 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     }
 
     /**
-     * {@inheritdoc}
+     * Delete a LoginAttempt object from peristent Storage.
+     * User object passed as reference, become NullDomainObject after
+     * deletion.
+     *
+     * @param DomainObjectInterface $domainObject
      */
     protected function concreteDelete(DomainObjectInterface &$loginAttempt)
     {
@@ -240,7 +274,11 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     }
 
     /**
-     * {@inheritdoc}
+     * Check for valid domain Object.
+     *
+     * @param DomainObjectInterface $domainObject
+     *
+     * @throws InvalidArgumentException if the domain object isn't of the type required by mapper
      */
     protected function checkDomainObjectType(DomainObjectInterface $domainObject)
     {
