@@ -349,7 +349,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
 
         try {
             $pdos = $this->pdo->prepare(
-            'INSERT INTO user_role (user_id, role_id)
+                'INSERT INTO user_role (user_id, role_id)
             VALUES (:user_id, (SELECT role_id FROM role WHERE name = :role_name))'
             );
 
@@ -395,7 +395,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         $userId = $user->getId();
 
         $pdos = $this->pdo->prepare(
-        'DELETE FROM user_role
+            'DELETE FROM user_role
         WHERE role_id = (SELECT role_id FROM role WHERE name = :role_name) 
         AND user_id = :user_id'
         );

@@ -198,7 +198,7 @@ class UserMapperTest extends TestCase
     {
         $users = self::$userMapper->fetchLimit($offset, $rowCount);
 
-        $key = array_keys($users)[0];
+        $key = \array_keys($users)[0];
 
         $this->assertCount(1, $users);
         $this->assertEquals($users[$key]->name, $userName);

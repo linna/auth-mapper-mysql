@@ -76,7 +76,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, LoginAttempt::class);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -97,7 +97,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, LoginAttempt::class);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -114,7 +114,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $pdos->bindParam(':user_name', $userName, PDO::PARAM_STR);
 
-        $time = (int) date('YmdHis', time() - $timeInSeconds);
+        $time = (int) \date('YmdHis', \time() - $timeInSeconds);
         $pdos->bindParam(':time', $time, PDO::PARAM_INT);
 
         $pdos->execute();
@@ -136,7 +136,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $pdos->bindParam(':session_id', $sessionId, PDO::PARAM_STR);
 
-        $time = (int) date('YmdHis', time() - $timeInSeconds);
+        $time = (int) \date('YmdHis', \time() - $timeInSeconds);
         $pdos->bindParam(':time', $time, PDO::PARAM_INT);
 
         $pdos->execute();
@@ -158,7 +158,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $pdos->bindParam(':ip', $ipAddress, PDO::PARAM_STR);
 
-        $time = (int) date('YmdHis', time() - $timeInSeconds);
+        $time = (int) \date('YmdHis', \time() - $timeInSeconds);
         $pdos->bindParam(':time', $time, PDO::PARAM_INT);
 
         $pdos->execute();
@@ -177,7 +177,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     {
         $pdos = $this->pdo->prepare('DELETE FROM login_attempt WHERE date_time < :time');
 
-        $time = (int) date('YmdHis', time() - $timeInSeconds);
+        $time = (int) \date('YmdHis', \time() - $timeInSeconds);
         $pdos->bindParam(':time', $time, PDO::PARAM_INT);
 
         $pdos->execute();

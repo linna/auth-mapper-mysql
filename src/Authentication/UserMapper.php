@@ -82,7 +82,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
     {
         $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE md5(name) = :name");
 
-        $hashedUserName = md5($userName);
+        $hashedUserName = \md5($userName);
 
         $pdos->bindParam(':name', $hashedUserName, PDO::PARAM_STR);
         $pdos->execute();
@@ -105,7 +105,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -126,7 +126,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**

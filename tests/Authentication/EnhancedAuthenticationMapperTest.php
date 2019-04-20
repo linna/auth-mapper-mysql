@@ -109,7 +109,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
             $loginAttempt->userName = $data[0];
             $loginAttempt->sessionId = $data[1];
             $loginAttempt->ipAddress = $data[2];
-            $loginAttempt->when = date('YmdHis', ((time() - 28) +  $timeSliding++));
+            $loginAttempt->when = \date('YmdHis', ((\time() - 28) +  $timeSliding++));
 
             self::$enhancedAuthenticationMapper->save($loginAttempt);
         }
@@ -204,7 +204,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
     {
         $loginAttempt = self::$enhancedAuthenticationMapper->fetchLimit($offset, $rowCount);
 
-        $key = array_keys($loginAttempt)[0];
+        $key = \array_keys($loginAttempt)[0];
 
         $this->assertCount(1, $loginAttempt);
         $this->assertEquals($loginAttempt[$key]->rId, $rId);
@@ -310,7 +310,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
     public function testDeleteOldLoginAttempts(): void
     {
         $this->assertTrue(self::$enhancedAuthenticationMapper->deleteOldLoginAttempts(-86400));
-        $this->assertEquals(0, count(self::$enhancedAuthenticationMapper->fetchAll()));
+        $this->assertEquals(0, \count(self::$enhancedAuthenticationMapper->fetchAll()));
     }
 
     /**
@@ -334,7 +334,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
         $loginAttempt->userName = 'test';
         $loginAttempt->sessionId = 'vaqgvpochtzf8gh888q6vnlch5';
         $loginAttempt->ipAddress = '127.0.0.1';
-        $loginAttempt->when = date('YmdHis', time());
+        $loginAttempt->when = \date('YmdHis', \time());
 
         $this->assertEquals(0, $loginAttempt->rId);
         $this->assertEquals(0, $loginAttempt->getId());
@@ -358,7 +358,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
      */
     public function testConcreteUpdate(): void
     {
-        $loginAttemptStored = current(self::$enhancedAuthenticationMapper->fetchAll());
+        $loginAttemptStored = \current(self::$enhancedAuthenticationMapper->fetchAll());
 
         $this->assertEquals('vaqgvpochtzf8gh888q6vnlch5', $loginAttemptStored->sessionId);
         $this->assertInstanceOf(LoginAttempt::class, $loginAttemptStored);
@@ -382,7 +382,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
      */
     public function testConcreteDelete(): void
     {
-        $loginAttemptStored = current(self::$enhancedAuthenticationMapper->fetchAll());
+        $loginAttemptStored = \current(self::$enhancedAuthenticationMapper->fetchAll());
 
         $this->assertEquals('qwertyochtzf8gh888q6vnlch5', $loginAttemptStored->sessionId);
         $this->assertInstanceOf(LoginAttempt::class, $loginAttemptStored);

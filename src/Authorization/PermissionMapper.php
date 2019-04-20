@@ -88,7 +88,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -107,7 +107,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -135,7 +135,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -157,7 +157,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -197,7 +197,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -231,7 +231,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return array_combine(array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'rId'), $array);
     }
 
     /**
@@ -257,7 +257,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
         $pdos->execute();
 
-        return array_flip($pdos->fetchAll(PDO::FETCH_COLUMN));
+        return \array_flip($pdos->fetchAll(PDO::FETCH_COLUMN));
     }
 
     /**
