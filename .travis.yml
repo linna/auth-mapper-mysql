@@ -8,9 +8,9 @@ services:
 - mysql
 
 before_script:
-- mysql -e 'create database linna_db;'
-- mysql -u root linna_db < tests/linna_db_mysql.sql
 - composer install
+- mysql -e 'create database linna_db;'
+- mysql -u root linna_db < vendor/linna/db-dumps/src/linna_db_mysql_test.sql
 
 script:
 - ./vendor/bin/phpunit

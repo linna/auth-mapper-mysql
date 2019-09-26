@@ -32,7 +32,7 @@ Mappers use as persistent storage mysql through php pdo.
    * PHP >= 7.1
    * PDO extension
    * MySQL extension
-   * linna/framework dev-b0.25.0
+   * linna/framework v0.25.0
 
 # Installation
 With composer:

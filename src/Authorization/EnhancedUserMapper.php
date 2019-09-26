@@ -133,12 +133,20 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     public function fetchByPermissionId(int $permissionId): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT u.user_id AS objectId, u.user_id AS rId, u.uuid, u.name, u.email, u.description, 
-        u.password, u.active, u.created, u.last_update AS lastUpdate 
+        (SELECT u.user_id AS "objectId", u.user_id AS "rId", u.uuid, u.name, u.email, u.description, 
+        u.password, u.active, u.created, u.last_update AS "lastUpdate" 
         FROM user AS u
         INNER JOIN user_permission AS up
         ON u.user_id = up.user_id
-        WHERE up.permission_id = :id');
+        WHERE up.permission_id = :id)
+        UNION
+        (SELECT u.user_id AS "objectId", u.user_id AS "rId", u.uuid, u.name, u.email, u.description, 
+        u.password, u.active, u.created, u.last_update AS "lastUpdate" 
+        FROM user AS u
+        INNER JOIN user_role AS ur ON u.user_id = ur.user_id
+        INNER JOIN role AS r ON ur.role_id = r.role_id
+        INNER JOIN role_permission AS rp ON r.role_id = rp.role_id
+        WHERE rp.permission_id = :id)');
 
         $pdos->bindParam(':id', $permissionId, PDO::PARAM_INT);
         $pdos->execute();
