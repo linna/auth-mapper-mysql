@@ -225,12 +225,10 @@ class UserMapperTest extends TestCase
         $user->name = 'test_user';
         $user->setPassword('test_password');
 
-        $this->assertEquals(0, $user->rId);
         $this->assertEquals(0, $user->getId());
 
         self::$userMapper->save($user);
 
-        $this->assertGreaterThan(0, $user->rId);
         $this->assertGreaterThan(0, $user->getId());
 
         $userStored = self::$userMapper->fetchByName('test_user');
