@@ -45,7 +45,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchById(int $permissionId): DomainObjectInterface
     {
         $pdos = $this->pdo->prepare('
-        SELECT permission_id AS objectId, permission_id AS rId, name, description, last_update AS lastUpdate 
+        SELECT permission_id AS id, name, description, created, last_update AS lastUpdate 
         FROM permission
         WHERE permission_id = :id');
 
@@ -63,7 +63,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchByName(string $permissionName): DomainObjectInterface
     {
         $pdos = $this->pdo->prepare('
-        SELECT permission_id AS objectId, permission_id AS rId, name, description, last_update AS lastUpdate 
+        SELECT permission_id AS id, name, description, created, last_update AS lastUpdate 
         FROM permission
         WHERE name = :name');
 
@@ -81,14 +81,14 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchAll(): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT permission_id AS objectId, permission_id AS rId, name, description, last_update AS lastUpdate
+        SELECT permission_id AS id, name, description, created, last_update AS lastUpdate
         FROM permission');
 
         $pdos->execute();
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'id'), $array);
     }
 
     /**
@@ -97,7 +97,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchLimit(int $offset, int $rowCount): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT permission_id AS objectId, permission_id AS rId, name, description, last_update AS lastUpdate 
+        SELECT permission_id AS id, name, description, created, last_update AS lastUpdate 
         FROM permission 
         LIMIT :offset, :rowcount');
 
@@ -107,7 +107,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'id'), $array);
     }
 
     /**
@@ -124,7 +124,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchByRoleId(int $roleId): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT p.permission_id AS objectId, p.permission_id AS rId, p.name, p.description, p.last_update AS lastUpdate
+        SELECT p.permission_id AS id, p.name, p.description, p.created, p.last_update AS lastUpdate
         FROM permission AS p
         INNER JOIN role_permission AS rp 
         ON rp.permission_id = p.permission_id
@@ -135,7 +135,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'id'), $array);
     }
 
     /**
@@ -144,7 +144,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchByRoleName(string $roleName): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT p.permission_id AS objectId, p.permission_id AS rId, p.name, p.description, p.last_update AS lastUpdate
+        SELECT p.permission_id AS id, p.name, p.description, p.created, p.last_update AS lastUpdate
         FROM permission AS p
         INNER JOIN role_permission AS rp
         INNER JOIN role as r
@@ -157,7 +157,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'id'), $array);
     }
 
     /**
@@ -174,15 +174,15 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchByUserId(int $userId): array
     {
         $pdos = $this->pdo->prepare('
-        (SELECT p.permission_id AS objectId, p.permission_id AS rId, p.name, p.description, 
-        0 AS inherited, p.last_update AS lastUpdate
+        (SELECT p.permission_id AS id, p.name, p.description, 
+        0 AS inherited, p.created, p.last_update AS lastUpdate
         FROM permission AS p
         INNER JOIN user_permission AS up
         ON p.permission_id = up.permission_id
         WHERE up.user_id = :id)
         UNION
-        (SELECT p.permission_id AS objectId, p.permission_id AS rId, p.name, p.description, 
-        r.role_id AS inherited, p.last_update AS lastUpdate
+        (SELECT p.permission_id AS id, p.name, p.description, 
+        r.role_id AS inherited, p.created, p.last_update AS lastUpdate
         FROM permission AS p
         INNER JOIN role_permission as rp
         INNER JOIN role AS r
@@ -197,7 +197,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'id'), $array);
     }
 
     /**
@@ -206,7 +206,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchByUserName(string $userName): array
     {
         $pdos = $this->pdo->prepare('
-        (SELECT p.permission_id AS objectId, p.permission_id AS rId, p.name, p.description, 0 AS inherited, p.last_update AS lastUpdate
+        (SELECT p.permission_id AS id, p.name, p.description, 0 AS inherited, p.created, p.last_update AS lastUpdate
         FROM permission AS p
         INNER JOIN user_permission AS up
         INNER JOIN user AS u
@@ -214,7 +214,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         AND up.user_id = u.user_id
         WHERE u.name = :name)
         UNION
-        (SELECT p.permission_id AS objectId, p.permission_id AS rId, p.name, p.description, r.role_id AS inherited, p.last_update AS lastUpdate
+        (SELECT p.permission_id AS id, p.name, p.description, r.role_id AS inherited, p.created, p.last_update AS lastUpdate
         FROM permission AS p
         INNER JOIN role_permission as rp
         INNER JOIN role AS r
@@ -231,7 +231,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'rId'), $array);
+        return \array_combine(\array_column($array, 'id'), $array);
     }
 
     /**

@@ -48,6 +48,11 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     protected $roleToUserMapper;
 
     /**
+     * @var string Costant part of SELECT query
+     */
+    protected $baseQuery = 'SELECT role_id AS id, name, description, active, created, last_update AS lastUpdate FROM role';
+    
+    /**
      * Constructor.
      *
      * @param ExtendedPDO               $pdo
@@ -75,7 +80,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         $users = $this->roleToUserMapper->fetchByRoleId($roleId);
         $permissions = $this->permissionMapper->fetchByRoleId($roleId);
 
-        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, role_id AS rId, name, description, active, last_update AS lastUpdate FROM role WHERE role_id = :id');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE role_id = :id");
         $pdos->bindParam(':id', $roleId, PDO::PARAM_INT);
         $pdos->execute();
 
@@ -95,7 +100,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, role_id AS rId, name, description, active, last_update AS lastUpdate FROM role');
+        $pdos = $this->pdo->prepare($this->baseQuery);
         $pdos->execute();
 
         return $this->roleCompositor($pdos);
@@ -106,7 +111,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare('SELECT role_id AS objectId, role_id AS rId, name, description, active, last_update AS lastUpdate FROM role LIMIT :offset, :rowcount');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} LIMIT :offset, :rowcount");
         $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
         $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
         $pdos->execute();
@@ -128,7 +133,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     public function fetchByPermissionId(int $permissionId): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT r.role_id AS objectId, r.role_id AS rId, r.name, r.description, r.active, r.last_update AS lastUpdate
+        SELECT r.role_id AS id, r.name, r.description, r.active, r.created, r.last_update AS lastUpdate
         FROM role AS r
         INNER JOIN role_permission AS rp
         ON r.role_id = rp.role_id
@@ -164,7 +169,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     public function fetchByUserId(int $userId): array
     {
         $pdos = $this->pdo->prepare('
-        SELECT r.role_id AS objectId, r.role_id AS rId, r.name, r.description, r.active, r.last_update AS lastUpdate
+        SELECT r.role_id AS id, r.name, r.description, r.active, r.created, r.last_update AS lastUpdate
         FROM role AS r
         INNER JOIN user_role AS ur
         ON r.role_id = ur.role_id
@@ -200,18 +205,28 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         $roles = [];
 
         while (($role = $pdos->fetch(PDO::FETCH_OBJ)) !== false) {
+            
+            $roleId = $role->getId();
+            /*$roleCreated = $role->getCreated();
+            $roleLastUpdate = $role->getLastUpdate();
+            
             $tmp = new Role(
-                $this->roleToUserMapper->fetchByRoleId((int) $role->objectId),
-                $this->permissionMapper->fetchByRoleId((int) $role->objectId)
+                $this->roleToUserMapper->fetchByRoleId($roleId),
+                $this->permissionMapper->fetchByRoleId($roleId)
             );
 
             $tmp->setId((int) $role->objectId);
             $tmp->active = (int) $role->active;
             $tmp->description = $role->description;
             $tmp->name = $role->name;
-            $tmp->lastUpdate = $role->lastUpdate;
+            $tmp->lastUpdate = $role->lastUpdate;*/
 
-            $roles[$role->objectId] = $tmp;
+            $role->__construct(
+                $this->roleToUserMapper->fetchByRoleId($roleId),
+                $this->permissionMapper->fetchByRoleId($roleId)
+            );
+            
+            $roles[$roleId] =  clone $role;
         }
 
         return $roles;
