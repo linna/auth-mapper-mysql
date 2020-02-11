@@ -207,26 +207,19 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         while (($role = $pdos->fetch(PDO::FETCH_OBJ)) !== false) {
             
             $roleId = $role->getId();
-            /*$roleCreated = $role->getCreated();
-            $roleLastUpdate = $role->getLastUpdate();
             
             $tmp = new Role(
                 $this->roleToUserMapper->fetchByRoleId($roleId),
                 $this->permissionMapper->fetchByRoleId($roleId)
             );
 
-            $tmp->setId((int) $role->objectId);
+            $tmp->setId((int) $roleId);
             $tmp->active = (int) $role->active;
             $tmp->description = $role->description;
             $tmp->name = $role->name;
-            $tmp->lastUpdate = $role->lastUpdate;*/
+            $tmp->lastUpdate = $role->lastUpdate;
 
-            $role->__construct(
-                $this->roleToUserMapper->fetchByRoleId($roleId),
-                $this->permissionMapper->fetchByRoleId($roleId)
-            );
-            
-            $roles[$roleId] =  clone $role;
+            $roles[$roleId] =  clone $tmp;
         }
 
         return $roles;
