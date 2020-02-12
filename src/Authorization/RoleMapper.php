@@ -51,7 +51,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
      * @var string Costant part of SELECT query
      */
     protected $baseQuery = 'SELECT role_id AS id, name, description, active, created, last_update AS lastUpdate FROM role';
-    
+
     /**
      * Constructor.
      *
@@ -205,9 +205,8 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         $roles = [];
 
         while (($role = $pdos->fetch(PDO::FETCH_OBJ)) !== false) {
-            
             $roleId = $role->getId();
-            
+
             $tmp = new Role(
                 $this->roleToUserMapper->fetchByRoleId($roleId),
                 $this->permissionMapper->fetchByRoleId($roleId)

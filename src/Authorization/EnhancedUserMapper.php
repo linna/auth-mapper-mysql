@@ -226,16 +226,15 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         $users = [];
 
         while (($user = $pdos->fetch(PDO::FETCH_OBJ)) !== false) {
-            
             $userId = $user->getId();
             //$userCreated = $user->getCreated();
             //$userLastUpdate = $user->getLastUpdate();
-                    
+
             $tmp = new EnhancedUser(
                 $this->password,
                 $this->roleToUserMapper->fetchByUserId($userId),
                 $this->permissionMapper->fetchByUserId($userId)
-            )
+            );
 
             $tmp->setId($userId);
             $tmp->uuid = $user->uuid;
@@ -247,13 +246,13 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
             $tmp->created = $user->created;
             $tmp->lastUpdate = $user->lastUpdate;
 
-            
+
             /*$user->__construct(
                 $this->password,
                 $this->roleToUserMapper->fetchByUserId($userId),
                 $this->permissionMapper->fetchByUserId($userId)
             );*/
-            
+
             $users[$userId] = clone $tmp;
         }
 
