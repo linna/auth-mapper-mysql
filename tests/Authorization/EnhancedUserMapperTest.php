@@ -21,7 +21,8 @@ use Linna\Authorization\RoleMapper;
 use Linna\Authorization\RoleToUserMapper;
 use Linna\Authentication\UserMapper;
 use Linna\DataMapper\NullDomainObject;
-use Linna\DataMapper\UUID4;
+//use Linna\DataMapper\UUID4;
+use Linna\Storage\ExtendedPDO;
 use Linna\Storage\StorageFactory;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -34,27 +35,29 @@ class EnhancedUserMapperTest extends TestCase
     /**
      * @var EnhancedUserMapper The enhanced user mapper class.
      */
-    protected static $enhancedUserMapper;
+    protected static EnhancedUserMapper $enhancedUserMapper;
 
     /**
      * @var PermissionMapper The permission mapper class.
      */
-    protected static $permissionMapper;
+    protected static PermissionMapper $permissionMapper;
 
     /**
      * @var RoleMapper The role mapper class.
      */
-    protected static $roleMapper;
+    protected static RoleMapper $roleMapper;
 
     /**
-     * @var PDO Database connection.
+     * @var ExtendedPDO Database connection.
      */
-    protected static $pdo;
+    protected static ExtendedPDO $pdo;
 
     /**
      * Setup.
+     *
+     * @return void
      */
-    public function setUp(): void
+    public static function setUpBeforeClass(): void
     {
         $options = [
             'dsn'      => $GLOBALS['pdo_mysql_dsn'],
@@ -533,6 +536,21 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testAddRole(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $role = self::$roleMapper->fetchById(1);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Role::class, $role);
+        
+        $this->assertFalse($user->hasRole($role));
+        
+        self::$enhancedUserMapper->addRole($user, $role);
+        
+        $this->assertTrue($user->hasRole($role));
+        
+        self::$enhancedUserMapper->removeRole($user, $role);
+        
+        $this->assertFalse($user->hasRole($role));
     }
 
     /**
@@ -542,6 +560,21 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testAddRoleById(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $role = self::$roleMapper->fetchById(1);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Role::class, $role);
+        
+        $this->assertFalse($user->hasRoleById($role->id));
+        
+        self::$enhancedUserMapper->addRoleById($user, $role->id);
+        
+        $this->assertTrue($user->hasRoleById($role->id));
+        
+        self::$enhancedUserMapper->removeRoleById($user, $role->id);
+        
+        $this->assertFalse($user->hasRoleById($role->id));
     }
 
     /**
@@ -551,6 +584,21 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testAddRoleByName(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $role = self::$roleMapper->fetchById(1);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Role::class, $role);
+        
+        $this->assertFalse($user->hasRoleByName($role->name));
+        
+        self::$enhancedUserMapper->addRoleByName($user, $role->name);
+        
+        $this->assertTrue($user->hasRoleByName($role->name));
+        
+        self::$enhancedUserMapper->removeRoleByName($user, $role->name);
+        
+        $this->assertFalse($user->hasRoleByName($role->name));
     }
 
     /**
@@ -560,6 +608,21 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testRemoveRole(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $role = self::$roleMapper->fetchById(1);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Role::class, $role);
+        
+        $this->assertFalse($user->hasRole($role));
+        
+        self::$enhancedUserMapper->addRole($user, $role);
+        
+        $this->assertTrue($user->hasRole($role));
+        
+        self::$enhancedUserMapper->removeRole($user, $role);
+        
+        $this->assertFalse($user->hasRole($role));
     }
 
     /**
@@ -569,6 +632,21 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testRemoveRoleById(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $role = self::$roleMapper->fetchById(1);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Role::class, $role);
+        
+        $this->assertFalse($user->hasRoleById($role->id));
+        
+        self::$enhancedUserMapper->addRoleById($user, $role->id);
+        
+        $this->assertTrue($user->hasRoleById($role->id));
+        
+        self::$enhancedUserMapper->removeRoleById($user, $role->id);
+        
+        $this->assertFalse($user->hasRoleById($role->id));
     }
 
     /**
@@ -578,5 +656,20 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testRemoveRoleByName(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $role = self::$roleMapper->fetchById(1);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Role::class, $role);
+        
+        $this->assertFalse($user->hasRoleByName($role->name));
+        
+        self::$enhancedUserMapper->addRoleByName($user, $role->name);
+        
+        $this->assertTrue($user->hasRoleByName($role->name));
+        
+        self::$enhancedUserMapper->removeRoleByName($user, $role->name);
+        
+        $this->assertFalse($user->hasRoleByName($role->name));
     }
 }

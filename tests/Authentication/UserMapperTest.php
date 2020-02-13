@@ -15,6 +15,7 @@ use Linna\Authentication\Password;
 use Linna\Authentication\User;
 use Linna\Authentication\UserMapper;
 use Linna\DataMapper\NullDomainObject;
+use Linna\Storage\ExtendedPDO;
 use Linna\Storage\StorageFactory;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -25,14 +26,14 @@ use PHPUnit\Framework\TestCase;
 class UserMapperTest extends TestCase
 {
     /**
-     * @var UserMapper The enhanced authentication mapper class
+     * @var UserMapper The enhanced authentication mapper class.
      */
-    protected static $userMapper;
+    protected static UserMapper $userMapper;
 
     /**
-     * @var PDO Database connection.
+     * @var ExtendedPDO Database connection.
      */
-    protected static $pdo;
+    protected static ExtendedPDO $pdo;
 
     /**
      * Setup.
@@ -80,7 +81,7 @@ class UserMapperTest extends TestCase
     }
 
     /**
-     * User id provider
+     * User id provider.
      *
      * @return array
      */
@@ -94,7 +95,8 @@ class UserMapperTest extends TestCase
             [5, 5],
             [6, 6],
             [7, 7],
-            [8, 0]
+            [8, 0],
+            [9, 0]
         ];
     }
 
@@ -247,17 +249,18 @@ class UserMapperTest extends TestCase
     {
         $userStored = self::$userMapper->fetchByName('test_user');
 
-        $this->assertEquals('test_user', $userStored->name);
         $this->assertInstanceOf(User::class, $userStored);
-
-        $userStored->name = 'test_user_name';
+        $this->assertEquals('test_user', $userStored->name);
+        
+        $userStored->name = 'test_user_update';
 
         self::$userMapper->save($userStored);
 
-        $userStoredUpdated = self::$userMapper->fetchByName('test_user_name');
+        $userStoredUpdated = self::$userMapper->fetchByName('test_user_update');
 
-        $this->assertEquals('test_user_name', $userStoredUpdated->name);
         $this->assertInstanceOf(User::class, $userStoredUpdated);
+        $this->assertEquals('test_user_update', $userStoredUpdated->name);
+        
     }
 
     /**
@@ -269,11 +272,11 @@ class UserMapperTest extends TestCase
      */
     public function testConcreteDelete(): void
     {
-        $userStored = self::$userMapper->fetchByName('test_user_name');
+        $userStored = self::$userMapper->fetchByName('test_user_update');
 
-        $this->assertEquals('test_user_name', $userStored->name);
         $this->assertInstanceOf(User::class, $userStored);
-
+        $this->assertEquals('test_user_update', $userStored->name);
+        
         self::$userMapper->delete($userStored);
 
         $this->assertInstanceOf(NullDomainObject::class, $userStored);

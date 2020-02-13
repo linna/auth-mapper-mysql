@@ -14,6 +14,7 @@ namespace Linna\Tests;
 use Linna\Authentication\EnhancedAuthenticationMapper;
 use Linna\Authentication\LoginAttempt;
 use Linna\DataMapper\NullDomainObject;
+use Linna\Storage\ExtendedPDO;
 use Linna\Storage\StorageFactory;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -24,14 +25,14 @@ use PHPUnit\Framework\TestCase;
 class EnhancedAuthenticationMapperTest extends TestCase
 {
     /**
-     * @var EnhancedAuthenticationMapper The enhanced authentication mapper class
+     * @var EnhancedAuthenticationMapper The enhanced authentication mapper class.
      */
-    protected static $enhancedAuthenticationMapper;
+    protected static EnhancedAuthenticationMapper $enhancedAuthenticationMapper;
 
     /**
-     * @var PDO Database connection.
+     * @var ExtendedPDO Database connection.
      */
-    protected static $pdo;
+    protected static ExtendedPDO $pdo;
 
     /**
      * Setup.
