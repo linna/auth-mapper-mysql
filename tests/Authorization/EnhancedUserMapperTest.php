@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Linna\Tests;
 
 use Linna\Authentication\Password;
+use Linna\Authorization\EnhancedUser;
 use Linna\Authorization\EnhancedUserMapper;
 use Linna\Authorization\Permission;
 use Linna\Authorization\PermissionMapper;
@@ -358,12 +359,33 @@ class EnhancedUserMapperTest extends TestCase
     }
 
     /**
+     * Role name provider.
+     *
+     * @return array
+     */
+    public function roleNameProvider(): array
+    {
+        return [
+            ['Administrator', 1],
+            ['Power Users', 2],
+            ['Users', 4],
+            ['Other', 0]
+        ];
+    }
+
+    /**
      * Test fetch by role name.
+     *
+     * @dataProvider roleNameProvider
+     *
+     * @param string $roleName
+     * @param int    $result
      *
      * @return void
      */
-    public function testFetchByRoleName(): void
+    public function testFetchByRoleName(string $roleName, int $result): void
     {
+        $this->assertCount($result, self::$enhancedUserMapper->fetchByRoleName($roleName));
     }
 
     /**
@@ -373,6 +395,19 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testGrantPermission(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $permission = self::$permissionMapper->fetchById(6);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Permission::class, $permission);
+        
+        self::$enhancedUserMapper->grantPermission($user, $permission);
+        
+        $this->assertTrue($user->can($permission));
+        
+        self::$enhancedUserMapper->revokePermission($user, $permission);
+        
+        $this->assertFalse($user->can($permission));
     }
 
     /**
@@ -382,15 +417,41 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testGrantPermissionById(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $permission = self::$permissionMapper->fetchById(6);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Permission::class, $permission);
+        
+        self::$enhancedUserMapper->grantPermissionById($user, $permission->id);
+        
+        $this->assertTrue($user->canById($permission->id));
+        
+        self::$enhancedUserMapper->revokePermissionById($user, $permission->id);
+        
+        $this->assertFalse($user->canById($permission->id));
     }
 
     /**
-     * Test grant permission.
+     * Test grant permission by name.
      *
      * @return void
      */
     public function testGrantPermissionByName(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $permission = self::$permissionMapper->fetchById(6);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Permission::class, $permission);
+        
+        self::$enhancedUserMapper->grantPermissionByName($user, $permission->name);
+        
+        $this->assertTrue($user->canByName($permission->name));
+        
+        self::$enhancedUserMapper->revokePermissionByName($user, $permission->name);
+        
+        $this->assertFalse($user->canByName($permission->name));
     }
 
     /**
@@ -400,6 +461,21 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testRevokePermission(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $permission = self::$permissionMapper->fetchById(6);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Permission::class, $permission);
+        
+        $this->assertFalse($user->can($permission));
+        
+        self::$enhancedUserMapper->grantPermission($user, $permission);
+        
+        $this->assertTrue($user->can($permission));
+        
+        self::$enhancedUserMapper->revokePermission($user, $permission);
+        
+        $this->assertFalse($user->can($permission));
     }
 
     /**
@@ -409,6 +485,21 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testRevokePermissionById(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $permission = self::$permissionMapper->fetchById(6);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Permission::class, $permission);
+        
+        $this->assertFalse($user->canById($permission->id));
+        
+        self::$enhancedUserMapper->grantPermissionById($user, $permission->id);
+        
+        $this->assertTrue($user->canById($permission->id));
+        
+        self::$enhancedUserMapper->revokePermissionById($user, $permission->id);
+        
+        $this->assertFalse($user->canById($permission->id));
     }
 
     /**
@@ -418,6 +509,21 @@ class EnhancedUserMapperTest extends TestCase
      */
     public function testRevokePermissionByName(): void
     {
+        $user = self::$enhancedUserMapper->fetchById(7);
+        $permission = self::$permissionMapper->fetchById(6);
+        
+        $this->assertInstanceOf(EnhancedUser::class, $user);
+        $this->assertInstanceOf(Permission::class, $permission);
+        
+        $this->assertFalse($user->canByName($permission->name));
+        
+        self::$enhancedUserMapper->grantPermissionByName($user, $permission->name);
+        
+        $this->assertTrue($user->canByName($permission->name));
+        
+        self::$enhancedUserMapper->revokePermissionByName($user, $permission->name);
+        
+        $this->assertFalse($user->canByName($permission->name));
     }
 
     /**

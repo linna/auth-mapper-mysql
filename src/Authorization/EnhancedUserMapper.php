@@ -15,6 +15,8 @@ use InvalidArgumentException;
 use Linna\Authentication\Password;
 use Linna\Authentication\User;
 use Linna\Authentication\UserMapper;
+use Linna\Authorization\PermissionMapperInterface;
+use Linna\Authorization\RoleToUserMapperInterface;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
@@ -30,12 +32,12 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     /**
      * @var PermissionMapperInterface Permission Mapper
      */
-    protected $permissionMapper;
+    protected PermissionMapperInterface $permissionMapper;
 
     /**
      * @var RoleToUserMapperInterface Role to user Mapper
      */
-    protected $roleToUserMapper;
+    protected RoleToUserMapperInterface $roleToUserMapper;
 
     /**
      * Class Constructor.
@@ -226,10 +228,9 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         $users = [];
 
         while (($user = $pdos->fetch(PDO::FETCH_OBJ)) !== false) {
-            $userId = $user->getId();
-            //$userCreated = $user->getCreated();
-            //$userLastUpdate = $user->getLastUpdate();
-
+            
+            $userId = (int) $user->id;
+            
             $tmp = new EnhancedUser(
                 $this->password,
                 $this->roleToUserMapper->fetchByUserId($userId),
@@ -245,13 +246,6 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
             $tmp->active = (int) $user->active;
             $tmp->created = $user->created;
             $tmp->lastUpdate = $user->lastUpdate;
-
-
-            /*$user->__construct(
-                $this->password,
-                $this->roleToUserMapper->fetchByUserId($userId),
-                $this->permissionMapper->fetchByUserId($userId)
-            );*/
 
             $users[$userId] = clone $tmp;
         }

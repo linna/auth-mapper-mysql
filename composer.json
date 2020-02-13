@@ -20,10 +20,10 @@
         "php": "^7.1"
     },
     "require-dev": {
-        "infection/infection": "^0.11",
-        "phpstan/phpstan": "^0.10",
-        "phpunit/phpunit": "^7.0",
-        "linna/framework": "^0.25",
+        "infection/infection": "^0.15",
+        "phpstan/phpstan": "^0.12",
+        "phpunit/phpunit": "^9.0",
+        "linna/framework": "dev-master",
         "linna/db-dumps": "dev-master"
     },
     "autoload": {

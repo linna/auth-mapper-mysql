@@ -27,12 +27,12 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     /**
      * @var ExtendedPDO Database Connection
      */
-    protected $pdo;
+    protected ExtendedPDO $pdo;
 
     /**
      * @var string Costant part of SELECT query
      */
-    protected $baseQuery = 'SELECT login_attempt_id AS id, user_name AS userName, session_id AS sessionId, ip, date_time AS "when", created, last_update AS lastUpdate FROM login_attempt';
+    protected string $baseQuery = 'SELECT login_attempt_id AS id, user_name AS userName, session_id AS sessionId, ip, date_time AS "when", created, last_update AS lastUpdate FROM login_attempt';
 
     /**
      * Constructor.
