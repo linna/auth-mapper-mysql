@@ -413,7 +413,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         AND user_id = :user_id'
         );
 
-        $pdos->bindParam(':role_id', $roleName, PDO::PARAM_INT);
+        $pdos->bindParam(':role_name', $roleName, PDO::PARAM_STR);
         $pdos->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $pdos->execute();
 
