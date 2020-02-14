@@ -21,7 +21,6 @@ use Linna\Authorization\RoleMapper;
 use Linna\Authorization\RoleToUserMapper;
 use Linna\Authentication\UserMapper;
 use Linna\DataMapper\NullDomainObject;
-//use Linna\DataMapper\UUID4;
 use Linna\Storage\ExtendedPDO;
 use Linna\Storage\StorageFactory;
 use PDO;

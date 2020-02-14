@@ -11,8 +11,16 @@ declare(strict_types=1);
 
 namespace Linna\Tests;
 
+use Linna\Authentication\Password;
+//use Linna\Authentication\User;
+use Linna\Authentication\UserMapper;
+use Linna\Authorization\EnhancedUser;
+use Linna\Authorization\EnhancedUserMapper;
 use Linna\Authorization\Permission;
 use Linna\Authorization\PermissionMapper;
+use Linna\Authorization\Role;
+use Linna\Authorization\RoleMapper;
+use Linna\Authorization\RoleToUserMapper;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use Linna\Storage\StorageFactory;
@@ -25,10 +33,20 @@ use PHPUnit\Framework\TestCase;
 class PermissionMapperTest extends TestCase
 {
     /**
+     * @var EnhancedUserMapper The enhanced user mapper class.
+     */
+    protected static EnhancedUserMapper $enhancedUserMapper;
+    
+    /**
      * @var PermissionMapper The permission mapper class.
      */
     protected static PermissionMapper $permissionMapper;
 
+    /**
+     * @var RoleMapper The role mapper class.
+     */
+    protected static RoleMapper $roleMapper;
+        
     /**
      * @var ExtendedPDO Database connection.
      */
@@ -54,9 +72,16 @@ class PermissionMapperTest extends TestCase
         ];
 
         $pdo = (new StorageFactory('pdo', $options))->get();
+        $password = new Password();
+
+        $permissionMapper = new PermissionMapper($pdo);
+        $role2userMapper = new RoleToUserMapper($pdo, $password);
+        $userMapper = new UserMapper($pdo, $password);
 
         self::$pdo = $pdo;
-        self::$permissionMapper = new PermissionMapper($pdo);
+        self::$permissionMapper = $permissionMapper;
+        self::$roleMapper = new RoleMapper($pdo, $permissionMapper, $userMapper, $role2userMapper);
+        self::$enhancedUserMapper = new EnhancedUserMapper($pdo, $password, $permissionMapper, $role2userMapper);
     }
 
     /**
@@ -201,7 +226,236 @@ class PermissionMapperTest extends TestCase
         $this->assertCount(1, $permissions);
         $this->assertEquals($permissions[$key]->name, $permissionName);
     }
+
+    /**
+     * Role id provider.
+     *
+     * @return array
+     */
+    public function roleIdProvider(): array
+    {
+        return [
+            [1, 6],
+            [2, 4],
+            [3, 1],
+            [4, 0]
+        ];
+    }
     
+    /**
+     * Test fetch by role.
+     *
+     * @dataProvider roleIdProvider
+     *
+     * @param int $roleId
+     * @param int $result
+     *
+     * @return void
+     */
+    public function testFetchByRole(int $roleId, int $result): void
+    {
+        $role = self::$roleMapper->fetchById($roleId);
+
+        if ($role instanceof Role) {
+            $this->assertCount($result, self::$permissionMapper->fetchByRole($role));
+        }
+
+        if ($role instanceof NullDomainObject) {
+            $this->assertSame($roleId, 4);
+            $this->assertSame($result, 0);
+        }
+    }
+
+    /**
+     * Test fetch by role id.
+     *
+     * @dataProvider roleIdProvider
+     * 
+     * @param int $roleId
+     * @param int $result
+     * 
+     * @return void
+     */
+    public function testFetchByRoleId(int $roleId, int $result): void
+    {
+        $this->assertCount($result, self::$permissionMapper->fetchByRoleId($roleId));
+    }
+
+    /**
+     * Role name provider.
+     *
+     * @return array
+     */
+    public function roleNameProvider(): array
+    {
+        return [
+            ['Administrator', 6],
+            ['Power Users', 4],
+            ['Users', 1],
+            ['Other', 0]
+        ];
+    }
+
+    /**
+     * Test fetch by role name.
+     *
+     * @dataProvider roleNameProvider
+     *
+     * @param string $roleName
+     * @param int    $result
+     *
+     * @return void
+     */
+    public function testFetchByRoleName(string $roleName, int $result): void
+    {
+        $this->assertCount($result, self::$permissionMapper->fetchByRoleName($roleName));
+    }
+
+    /**
+     * User id provider.
+     *
+     * @return array
+     */
+    public function userIdProvider(): array
+    {
+        return [
+            [1, 6],
+            [2, 4],
+            [3, 4],
+            [4, 3],
+            [5, 5],
+            [6, 1],
+            [7, 1],
+            [8, 0]
+        ];
+    }
+    
+    /**
+     * Test fetch by user.
+     * 
+     * @dataProvider userIdProvider
+     * 
+     * @param int $userId
+     * @param int $result
+     * 
+     * @return void
+     */
+    public function testFetchByUser(int $userId, int $result): void
+    {
+        $user = self::$enhancedUserMapper->fetchById($userId);
+
+        if ($user instanceof EnhancedUser) {
+            $this->assertCount($result, self::$permissionMapper->fetchByUser($user));
+        }
+
+        if ($user instanceof NullDomainObject) {
+            $this->assertSame($userId, 8);
+            $this->assertSame($result, 0);
+        }
+    }
+
+    /**
+     * Test fetch by user id.
+     * 
+     * @dataProvider userIdProvider
+     * 
+     * @param int $userId
+     * @param int $result
+     * 
+     * @return void
+     */
+    public function testFetchByUserId(int $userId, int $result): void
+    {
+        $this->assertCount($result, self::$permissionMapper->fetchByUserId($userId));
+    }
+
+    /**
+     * User name provider.
+     *
+     * @return array
+     */
+    public function userNameProvider(): array
+    {
+        return [
+            ['root', 6],
+            ['User_0', 4],
+            ['User_1', 4],
+            ['User_2', 3],
+            ['User_3', 5],
+            ['User_4', 1],
+            ['User_5', 1],
+            ['other_user', 0]
+        ];
+    }
+    
+    /**
+     * Test fetch by user name.
+     *
+     * @dataProvider userNameProvider
+     * 
+     * @param string $userName
+     * @param int    $result
+     * 
+     * @return void
+     */
+    public function testFetchByUserName(string $userName, int $result): void
+    {
+        $this->assertCount($result, self::$permissionMapper->fetchByUserName($userName));
+    }
+
+    /**
+     * Test fetch user permission hash table.
+     *
+     * @return void
+     */
+    public function testFetchUserPermissionHashTable(): void
+    {
+        $array = [
+            '1a948f1b4374f4e3f02501c7feb43784021718a93c1ed5f9f19adf357bb2d20e' => 0,
+            '77ac319bfe1979e2d799d9e6987e65feb54f61511c03552ebae990826c208590' => 1,
+            '9c193c604ad7de942961af97b39ff541f2e611fdf0b93a3044e16dfbd808f41b' => 2,
+            '9f29a130438b81170b92a42650f9a94291ecad60bd47af2a3886e75f7f728725' => 3,
+            'b05e244762b1e472be89a93800cc3ee326743cecb55984bf12813addb8de66d0' => 4,
+            'ec6c168f4411ec8fa9ab8d47dd25954ce53728404fed0e7a9bc7f29dab38c30d' => 5
+        ];
+
+        $this->assertEquals($array, self::$permissionMapper->fetchUserPermissionHashTable(1));
+        
+        //var_dump();
+        
+        //$this->assertTrue(true);
+    }
+
+    /**
+     * Test permission exists by id.
+     *
+     * @dataProvider permissionIdProvider
+     * 
+     * @param int  $permissionId
+     * @param bool $result
+     * 
+     * @return void
+     */
+    public function testPermissionExistById(int $permissionId, int $result): void
+    {
+        $this->assertSame((bool) $result, self::$permissionMapper->permissionExistById($permissionId));
+    }
+
+    /**
+     * Test permission exists by name.
+     *
+     * @dataProvider permissionNameProvider
+     * 
+     * @param string $permissionName
+     * @param bool   $result
+     * 
+     * @return void
+     */
+    public function testPermissionExistByName(string $permissionName, string $result): void
+    {
+        $this->assertSame((bool) $result, self::$permissionMapper->permissionExistByName($permissionName));
+    }
+
     /**
      * Test concrete create.
      *
@@ -275,121 +529,6 @@ class PermissionMapperTest extends TestCase
         self::$permissionMapper->delete($permissionStored);
 
         $this->assertInstanceOf(NullDomainObject::class, $permissionStored);
-    }
+    }    
     
-    /**
-     * Test fetch by role.
-     *
-     * @param int $roleId
-     * @param int $result
-     * 
-     * @return void
-     */
-    public function testFetchByRole(/*int $roleId, int $result*/): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Test fetch by role id.
-     *
-     * @param int $roleId
-     * @param int $result
-     * 
-     * @return void
-     */
-    public function testFetchByRoleId(/*int $roleId, int $result*/): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Test fetch by role name.
-     * 
-     * @param string $roleName
-     * @param int    $result
-     * 
-     * @return void
-     */
-    public function testFetchByRoleName(/*string $roleName, int $result*/): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Test fetch by user.
-     * 
-     * @param int $userId
-     * @param int $result
-     * 
-     * @return void
-     */
-    public function testFetchByUser(/*int $userId, int $result*/): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Test fetch by user id.
-     * 
-     * @param int $userId
-     * @param int $result
-     * 
-     * @return void
-     */
-    public function testFetchByUserId(/*int $userId, int $result*/): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Test fetch by user name.
-     *
-     * @param string $userName
-     * @param int    $result
-     * 
-     * @return void
-     */
-    public function testFetchByUserName(/*string $userName, int $result*/): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Test fetch user permission hash table.
-     *
-     * @param int   $userId
-     * @param array $result
-     *
-     * @return void
-     */
-    public function testFetchUserPermissionHashTable(/*int $userId, array $result*/): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Test permission exists by id.
-     *
-     * @param int  $permissionId
-     * @param bool $result
-     * 
-     * @return void
-     */
-    public function testPermissionExistById(/*int $permissionId, bool $result*/): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Test permission exists by name.
-     *
-     * @param string $permissionName
-     * @param bool $result
-     * @return void
-     */
-    public function testPermissionExistByName(/*string $permissionName, bool $result*/): void
-    {
-        $this->assertTrue(true);
-    }
 }
