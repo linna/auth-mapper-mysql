@@ -95,6 +95,30 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         return new NullDomainObject();
     }
 
+    //add fetch by name to role mapper interface in framework
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchByName(string $roleName): DomainObjectInterface
+    {
+        $users = $this->roleToUserMapper->fetchByRoleName($roleName);
+        $permissions = $this->permissionMapper->fetchByRoleName($roleName);
+
+        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE name = :name");
+        $pdos->bindParam(':name', $roleName, PDO::PARAM_STR);
+        $pdos->execute();
+
+        $role = $pdos->fetchObject(Role::class, [$users, $permissions]);
+
+        unset($users, $permissions);
+
+        if ($role instanceof Role) {
+            return $role;
+        }
+
+        return new NullDomainObject();
+    }
+    
     /**
      * {@inheritdoc}
      */
@@ -216,6 +240,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
             $tmp->active = (int) $role->active;
             $tmp->description = $role->description;
             $tmp->name = $role->name;
+            $tmp->created = $role->created;
             $tmp->lastUpdate = $role->lastUpdate;
 
             $roles[$roleId] =  clone $tmp;
@@ -379,7 +404,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    protected function concreteInsert(DomainObjectInterface &$role): string
+    protected function concreteInsert(DomainObjectInterface &$role)
     {
         $this->checkDomainObjectType($role);
 
