@@ -399,16 +399,16 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $permission = self::$permissionMapper->fetchById(6);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Permission::class, $permission);
-        
+
         self::$enhancedUserMapper->grantPermission($user, $permission);
-        
+
         $this->assertTrue($user->can($permission));
-        
+
         self::$enhancedUserMapper->revokePermission($user, $permission);
-        
+
         $this->assertFalse($user->can($permission));
     }
 
@@ -421,16 +421,16 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $permission = self::$permissionMapper->fetchById(6);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Permission::class, $permission);
-        
+
         self::$enhancedUserMapper->grantPermissionById($user, $permission->id);
-        
+
         $this->assertTrue($user->canById($permission->id));
-        
+
         self::$enhancedUserMapper->revokePermissionById($user, $permission->id);
-        
+
         $this->assertFalse($user->canById($permission->id));
     }
 
@@ -443,16 +443,16 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $permission = self::$permissionMapper->fetchById(6);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Permission::class, $permission);
-        
+
         self::$enhancedUserMapper->grantPermissionByName($user, $permission->name);
-        
+
         $this->assertTrue($user->canByName($permission->name));
-        
+
         self::$enhancedUserMapper->revokePermissionByName($user, $permission->name);
-        
+
         $this->assertFalse($user->canByName($permission->name));
     }
 
@@ -465,18 +465,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $permission = self::$permissionMapper->fetchById(6);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Permission::class, $permission);
-        
+
         $this->assertFalse($user->can($permission));
-        
+
         self::$enhancedUserMapper->grantPermission($user, $permission);
-        
+
         $this->assertTrue($user->can($permission));
-        
+
         self::$enhancedUserMapper->revokePermission($user, $permission);
-        
+
         $this->assertFalse($user->can($permission));
     }
 
@@ -489,18 +489,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $permission = self::$permissionMapper->fetchById(6);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Permission::class, $permission);
-        
+
         $this->assertFalse($user->canById($permission->id));
-        
+
         self::$enhancedUserMapper->grantPermissionById($user, $permission->id);
-        
+
         $this->assertTrue($user->canById($permission->id));
-        
+
         self::$enhancedUserMapper->revokePermissionById($user, $permission->id);
-        
+
         $this->assertFalse($user->canById($permission->id));
     }
 
@@ -513,18 +513,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $permission = self::$permissionMapper->fetchById(6);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Permission::class, $permission);
-        
+
         $this->assertFalse($user->canByName($permission->name));
-        
+
         self::$enhancedUserMapper->grantPermissionByName($user, $permission->name);
-        
+
         $this->assertTrue($user->canByName($permission->name));
-        
+
         self::$enhancedUserMapper->revokePermissionByName($user, $permission->name);
-        
+
         $this->assertFalse($user->canByName($permission->name));
     }
 
@@ -537,18 +537,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $role = self::$roleMapper->fetchById(1);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Role::class, $role);
-        
+
         $this->assertFalse($user->hasRole($role));
-        
+
         self::$enhancedUserMapper->addRole($user, $role);
-        
+
         $this->assertTrue($user->hasRole($role));
-        
+
         self::$enhancedUserMapper->removeRole($user, $role);
-        
+
         $this->assertFalse($user->hasRole($role));
     }
 
@@ -561,18 +561,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $role = self::$roleMapper->fetchById(1);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Role::class, $role);
-        
+
         $this->assertFalse($user->hasRoleById($role->id));
-        
+
         self::$enhancedUserMapper->addRoleById($user, $role->id);
-        
+
         $this->assertTrue($user->hasRoleById($role->id));
-        
+
         self::$enhancedUserMapper->removeRoleById($user, $role->id);
-        
+
         $this->assertFalse($user->hasRoleById($role->id));
     }
 
@@ -585,18 +585,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $role = self::$roleMapper->fetchById(1);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Role::class, $role);
-        
+
         $this->assertFalse($user->hasRoleByName($role->name));
-        
+
         self::$enhancedUserMapper->addRoleByName($user, $role->name);
-        
+
         $this->assertTrue($user->hasRoleByName($role->name));
-        
+
         self::$enhancedUserMapper->removeRoleByName($user, $role->name);
-        
+
         $this->assertFalse($user->hasRoleByName($role->name));
     }
 
@@ -609,18 +609,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $role = self::$roleMapper->fetchById(1);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Role::class, $role);
-        
+
         $this->assertFalse($user->hasRole($role));
-        
+
         self::$enhancedUserMapper->addRole($user, $role);
-        
+
         $this->assertTrue($user->hasRole($role));
-        
+
         self::$enhancedUserMapper->removeRole($user, $role);
-        
+
         $this->assertFalse($user->hasRole($role));
     }
 
@@ -633,18 +633,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $role = self::$roleMapper->fetchById(1);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Role::class, $role);
-        
+
         $this->assertFalse($user->hasRoleById($role->id));
-        
+
         self::$enhancedUserMapper->addRoleById($user, $role->id);
-        
+
         $this->assertTrue($user->hasRoleById($role->id));
-        
+
         self::$enhancedUserMapper->removeRoleById($user, $role->id);
-        
+
         $this->assertFalse($user->hasRoleById($role->id));
     }
 
@@ -657,18 +657,18 @@ class EnhancedUserMapperTest extends TestCase
     {
         $user = self::$enhancedUserMapper->fetchById(7);
         $role = self::$roleMapper->fetchById(1);
-        
+
         $this->assertInstanceOf(EnhancedUser::class, $user);
         $this->assertInstanceOf(Role::class, $role);
-        
+
         $this->assertFalse($user->hasRoleByName($role->name));
-        
+
         self::$enhancedUserMapper->addRoleByName($user, $role->name);
-        
+
         $this->assertTrue($user->hasRoleByName($role->name));
-        
+
         self::$enhancedUserMapper->removeRoleByName($user, $role->name);
-        
+
         $this->assertFalse($user->hasRoleByName($role->name));
     }
 }

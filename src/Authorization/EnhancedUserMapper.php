@@ -228,9 +228,8 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         $users = [];
 
         while (($user = $pdos->fetch(PDO::FETCH_OBJ)) !== false) {
-            
             $userId = (int) $user->id;
-            
+
             $tmp = new EnhancedUser(
                 $this->password,
                 $this->roleToUserMapper->fetchByUserId($userId),

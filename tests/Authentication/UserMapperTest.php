@@ -251,7 +251,7 @@ class UserMapperTest extends TestCase
 
         $this->assertInstanceOf(User::class, $userStored);
         $this->assertEquals('test_user', $userStored->name);
-        
+
         $userStored->name = 'test_user_update';
 
         self::$userMapper->save($userStored);
@@ -260,7 +260,6 @@ class UserMapperTest extends TestCase
 
         $this->assertInstanceOf(User::class, $userStoredUpdated);
         $this->assertEquals('test_user_update', $userStoredUpdated->name);
-        
     }
 
     /**
@@ -276,7 +275,7 @@ class UserMapperTest extends TestCase
 
         $this->assertInstanceOf(User::class, $userStored);
         $this->assertEquals('test_user_update', $userStored->name);
-        
+
         self::$userMapper->delete($userStored);
 
         $this->assertInstanceOf(NullDomainObject::class, $userStored);

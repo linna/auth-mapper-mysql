@@ -118,7 +118,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
 
         return new NullDomainObject();
     }
-    
+
     /**
      * {@inheritdoc}
      */

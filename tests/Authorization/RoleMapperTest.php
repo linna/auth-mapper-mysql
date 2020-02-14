@@ -36,7 +36,7 @@ class RoleMapperTest extends TestCase
      * @var EnhancedUserMapper The enhanced user mapper class.
      */
     protected static EnhancedUserMapper $enhancedUserMapper;
-    
+
     /**
      * @var PermissionMapper The permission mapper class.
      */
@@ -51,7 +51,7 @@ class RoleMapperTest extends TestCase
      * @var ExtendedPDO Database connection.
      */
     protected static ExtendedPDO $pdo;
-    
+
     /**
      * Setup.
      *
@@ -93,7 +93,7 @@ class RoleMapperTest extends TestCase
     {
         self::$pdo->exec('ALTER TABLE role AUTO_INCREMENT = 0');
     }
-    
+
     /**
      * Test new instance.
      */
@@ -101,7 +101,7 @@ class RoleMapperTest extends TestCase
     {
         $this->assertInstanceOf(RoleMapper::class, self::$roleMapper);
     }
-    
+
     public function testFetchById(/*int $roleId*/): void
     {
         $this->assertTrue(true);
@@ -312,7 +312,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertInstanceOf(Role::class, $roleStored);
         $this->assertEquals('test_role', $roleStored->name);
-        
+
         $roleStored->name = 'test_role_update';
 
         self::$roleMapper->save($roleStored);
@@ -336,7 +336,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertInstanceOf(Role::class, $roleStored);
         $this->assertEquals('test_role_update', $roleStored->name);
-        
+
         self::$roleMapper->delete($roleStored);
 
         $this->assertInstanceOf(NullDomainObject::class, $roleStored);

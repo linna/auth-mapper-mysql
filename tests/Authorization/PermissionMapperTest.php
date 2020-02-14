@@ -36,7 +36,7 @@ class PermissionMapperTest extends TestCase
      * @var EnhancedUserMapper The enhanced user mapper class.
      */
     protected static EnhancedUserMapper $enhancedUserMapper;
-    
+
     /**
      * @var PermissionMapper The permission mapper class.
      */
@@ -46,12 +46,12 @@ class PermissionMapperTest extends TestCase
      * @var RoleMapper The role mapper class.
      */
     protected static RoleMapper $roleMapper;
-        
+
     /**
      * @var ExtendedPDO Database connection.
      */
     protected static ExtendedPDO $pdo;
-    
+
     /**
      * Setup.
      *
@@ -93,7 +93,7 @@ class PermissionMapperTest extends TestCase
     {
         self::$pdo->exec('ALTER TABLE permission AUTO_INCREMENT = 0');
     }
-    
+
     /**
      * Test new instance.
      *
@@ -103,7 +103,7 @@ class PermissionMapperTest extends TestCase
     {
         $this->assertInstanceOf(PermissionMapper::class, self::$permissionMapper);
     }
-    
+
     /**
      * Permission id provider.
      *
@@ -138,7 +138,7 @@ class PermissionMapperTest extends TestCase
         $permission = self::$permissionMapper->fetchById($permissionId);
         $this->assertEquals($permission->getId(), $expectedId);
     }
-    
+
     /**
      * Permission name provider
      *
@@ -178,7 +178,7 @@ class PermissionMapperTest extends TestCase
 
         $this->assertEquals($permission->name, $expectedName);
     }
-    
+
     /**
      * Test fetch all.
      *
@@ -188,7 +188,7 @@ class PermissionMapperTest extends TestCase
     {
         $this->assertCount(6, self::$permissionMapper->fetchAll());
     }
-    
+
     /**
      * Permission fetch limit provider.
      *
@@ -241,7 +241,7 @@ class PermissionMapperTest extends TestCase
             [4, 0]
         ];
     }
-    
+
     /**
      * Test fetch by role.
      *
@@ -270,10 +270,10 @@ class PermissionMapperTest extends TestCase
      * Test fetch by role id.
      *
      * @dataProvider roleIdProvider
-     * 
+     *
      * @param int $roleId
      * @param int $result
-     * 
+     *
      * @return void
      */
     public function testFetchByRoleId(int $roleId, int $result): void
@@ -329,15 +329,15 @@ class PermissionMapperTest extends TestCase
             [8, 0]
         ];
     }
-    
+
     /**
      * Test fetch by user.
-     * 
+     *
      * @dataProvider userIdProvider
-     * 
+     *
      * @param int $userId
      * @param int $result
-     * 
+     *
      * @return void
      */
     public function testFetchByUser(int $userId, int $result): void
@@ -356,12 +356,12 @@ class PermissionMapperTest extends TestCase
 
     /**
      * Test fetch by user id.
-     * 
+     *
      * @dataProvider userIdProvider
-     * 
+     *
      * @param int $userId
      * @param int $result
-     * 
+     *
      * @return void
      */
     public function testFetchByUserId(int $userId, int $result): void
@@ -387,15 +387,15 @@ class PermissionMapperTest extends TestCase
             ['other_user', 0]
         ];
     }
-    
+
     /**
      * Test fetch by user name.
      *
      * @dataProvider userNameProvider
-     * 
+     *
      * @param string $userName
      * @param int    $result
-     * 
+     *
      * @return void
      */
     public function testFetchByUserName(string $userName, int $result): void
@@ -420,9 +420,9 @@ class PermissionMapperTest extends TestCase
         ];
 
         $this->assertEquals($array, self::$permissionMapper->fetchUserPermissionHashTable(1));
-        
+
         //var_dump();
-        
+
         //$this->assertTrue(true);
     }
 
@@ -430,10 +430,10 @@ class PermissionMapperTest extends TestCase
      * Test permission exists by id.
      *
      * @dataProvider permissionIdProvider
-     * 
+     *
      * @param int  $permissionId
      * @param bool $result
-     * 
+     *
      * @return void
      */
     public function testPermissionExistById(int $permissionId, int $result): void
@@ -445,10 +445,10 @@ class PermissionMapperTest extends TestCase
      * Test permission exists by name.
      *
      * @dataProvider permissionNameProvider
-     * 
+     *
      * @param string $permissionName
      * @param bool   $result
-     * 
+     *
      * @return void
      */
     public function testPermissionExistByName(string $permissionName, string $result): void
@@ -465,7 +465,7 @@ class PermissionMapperTest extends TestCase
     {
         $this->assertInstanceOf(Permission::class, self::$permissionMapper->create());
     }
-    
+
     /**
      * Test concrete insert.
      *
@@ -500,7 +500,7 @@ class PermissionMapperTest extends TestCase
 
         $this->assertInstanceOf(Permission::class, $permissionStored);
         $this->assertEquals('test_permission', $permissionStored->name);
-        
+
         $permissionStored->name = 'test_permission_update';
 
         self::$permissionMapper->save($permissionStored);
@@ -509,7 +509,6 @@ class PermissionMapperTest extends TestCase
 
         $this->assertInstanceOf(Permission::class, $permissionStoredUpdated);
         $this->assertEquals('test_permission_update', $permissionStoredUpdated->name);
-        
     }
 
     /**
@@ -525,10 +524,9 @@ class PermissionMapperTest extends TestCase
 
         $this->assertInstanceOf(Permission::class, $permissionStored);
         $this->assertEquals('test_permission_update', $permissionStored->name);
-        
+
         self::$permissionMapper->delete($permissionStored);
 
         $this->assertInstanceOf(NullDomainObject::class, $permissionStored);
-    }    
-    
+    }
 }
