@@ -17,7 +17,10 @@
         }
     ],
     "require": {
-        "php": "^7.1"
+        "php": "^7.4",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-mysqli": "*"
     },
     "require-dev": {
         "infection/infection": "^0.15",
