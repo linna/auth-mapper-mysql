@@ -30,27 +30,27 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * @var ExtendedPDO Database Connection
      */
-    protected $pdo;
+    protected ExtendedPDO $pdo;
 
     /**
      * @var PermissionMapperInterface Permission Mapper
      */
-    protected $permissionMapper;
+    protected PermissionMapperInterface $permissionMapper;
 
     /**
      * @var UserMapperInterface Permission Mapper
      */
-    protected $userMapper;
+    protected UserMapperInterface $userMapper;
 
     /**
      * @var RoleToUserMapperInterface Role To User Mapper
      */
-    protected $roleToUserMapper;
+    protected RoleToUserMapperInterface $roleToUserMapper;
 
     /**
      * @var string Costant part of SELECT query
      */
-    protected $baseQuery = 'SELECT role_id AS id, name, description, active, created, last_update AS lastUpdate FROM role';
+    protected string $baseQuery = 'SELECT role_id AS id, name, description, active, created, last_update AS lastUpdate FROM role';
 
     /**
      * Constructor.

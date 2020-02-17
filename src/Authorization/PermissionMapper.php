@@ -27,7 +27,12 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     /**
      * @var ExtendedPDO Database Connection
      */
-    protected $pdo;
+    protected ExtendedPDO $pdo;
+
+    /**
+     * @var string Constant part of SELECT query
+     */
+    protected string $baseQuery = 'SELECT permission_id AS id, name, description, created, last_update AS lastUpdate FROM permission';
 
     /**
      * Constructor.
@@ -44,10 +49,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchById(int $permissionId): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare('
-        SELECT permission_id AS id, name, description, created, last_update AS lastUpdate 
-        FROM permission
-        WHERE permission_id = :id');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE permission_id = :id");
 
         $pdos->bindParam(':id', $permissionId, PDO::PARAM_INT);
         $pdos->execute();
@@ -62,10 +64,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchByName(string $permissionName): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare('
-        SELECT permission_id AS id, name, description, created, last_update AS lastUpdate 
-        FROM permission
-        WHERE name = :name');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE name = :name");
 
         $pdos->bindParam(':name', $permissionName, PDO::PARAM_STR);
         $pdos->execute();
@@ -80,9 +79,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare('
-        SELECT permission_id AS id, name, description, created, last_update AS lastUpdate
-        FROM permission');
+        $pdos = $this->pdo->prepare($this->baseQuery);
 
         $pdos->execute();
 
@@ -96,10 +93,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare('
-        SELECT permission_id AS id, name, description, created, last_update AS lastUpdate 
-        FROM permission 
-        LIMIT :offset, :rowcount');
+        $pdos = $this->pdo->prepare("{$this->baseQuery} LIMIT :offset, :rowcount");
 
         $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
         $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
@@ -251,7 +245,8 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         INNER JOIN role_permission as rp
         ON u.user_id = ur.user_id
         AND ur.role_id = r.role_id
-        AND r.role_id = rp.role_id WHERE u.user_id = :id)
+        AND r.role_id = rp.role_id 
+        WHERE u.user_id = :id)
         ORDER BY p_hash');
 
         $pdos->bindParam(':id', $userId, PDO::PARAM_INT);

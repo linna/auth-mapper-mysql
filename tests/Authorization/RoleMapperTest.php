@@ -130,7 +130,7 @@ class RoleMapperTest extends TestCase
     public function testFetchById(int $roleId, int $expectedId): void
     {
         $role = self::$roleMapper->fetchById($roleId);
-        
+
         //$this->assertInstanceOf(Role::class, $role);
         $this->assertEquals($role->getId(), $expectedId);
     }
@@ -171,7 +171,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertEquals($role->name, $expectedName);
     }
-    
+
     /**
      * Test fetch all.
      *
@@ -550,7 +550,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertInstanceOf(Role::class, $role);
         $this->assertInstanceOf(EnhancedUser::class, $user);
-        
+
         $this->assertFalse($role->isUserInRole($user));
 
         self::$roleMapper->addUser($role, $user);
@@ -574,7 +574,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertInstanceOf(Role::class, $role);
         $this->assertInstanceOf(EnhancedUser::class, $user);
-        
+
         $this->assertFalse($role->isUserInRoleById($user->id));
 
         self::$roleMapper->addUserById($role, $user->id);
@@ -598,7 +598,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertInstanceOf(Role::class, $role);
         $this->assertInstanceOf(EnhancedUser::class, $user);
-        
+
         $this->assertFalse($role->isUserInRoleByName($user->name));
 
         self::$roleMapper->addUserByName($role, $user->name);
@@ -622,7 +622,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertInstanceOf(Role::class, $role);
         $this->assertInstanceOf(EnhancedUser::class, $user);
-        
+
         $this->assertFalse($role->isUserInRole($user));
 
         self::$roleMapper->addUser($role, $user);
@@ -646,7 +646,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertInstanceOf(Role::class, $role);
         $this->assertInstanceOf(EnhancedUser::class, $user);
-        
+
         $this->assertFalse($role->isUserInRoleById($user->id));
 
         self::$roleMapper->addUserById($role, $user->id);
@@ -670,7 +670,7 @@ class RoleMapperTest extends TestCase
 
         $this->assertInstanceOf(Role::class, $role);
         $this->assertInstanceOf(EnhancedUser::class, $user);
-        
+
         $this->assertFalse($role->isUserInRoleByName($user->name));
 
         self::$roleMapper->addUserByName($role, $user->name);

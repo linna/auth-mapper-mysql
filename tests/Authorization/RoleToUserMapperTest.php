@@ -96,7 +96,7 @@ class RoleToUserMapperTest extends TestCase
     {
         $this->assertInstanceOf(RoleToUserMapper::class, self::$roleToUserMapper);
     }
-    
+
     /**
      * Role id provider.
      *
@@ -111,7 +111,7 @@ class RoleToUserMapperTest extends TestCase
             [4, 0]
         ];
     }
-    
+
     /**
      * Test fetch by role.
      *

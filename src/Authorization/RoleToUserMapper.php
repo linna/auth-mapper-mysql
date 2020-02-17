@@ -24,12 +24,12 @@ class RoleToUserMapper implements RoleToUserMapperInterface
     /**
      * @var Password Password util for user object
      */
-    protected $password;
+    protected Password $password;
 
     /**
      * @var ExtendedPDO Database Connection
      */
-    protected $pdo;
+    protected ExtendedPDO $pdo;
 
     /**
      * Class Constructor.
