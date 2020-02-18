@@ -37,7 +37,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
     protected ExtendedPDO $pdo;
 
     /**
-     * @var string Costant part of SELECT query
+     * @var string Constant part of SELECT query
      */
     protected string $baseQuery = 'SELECT user_id AS id, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user';
 

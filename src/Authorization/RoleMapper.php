@@ -48,7 +48,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     protected RoleToUserMapperInterface $roleToUserMapper;
 
     /**
-     * @var string Costant part of SELECT query
+     * @var string Constant part of SELECT query
      */
     protected string $baseQuery = 'SELECT role_id AS id, name, description, active, created, last_update AS lastUpdate FROM role';
 
