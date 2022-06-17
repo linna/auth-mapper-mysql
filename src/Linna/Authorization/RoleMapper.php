@@ -75,7 +75,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function fetchById(int $roleId): DomainObjectInterface
+    public function fetchById(string|int $roleId): DomainObjectInterface
     {
         $users = $this->roleToUserMapper->fetchByRoleId($roleId);
         $permissions = $this->permissionMapper->fetchByRoleId($roleId);
@@ -154,7 +154,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function fetchByPermissionId(int $permissionId): array
+    public function fetchByPermissionId(string|int $permissionId): array
     {
         $pdos = $this->pdo->prepare('
         SELECT r.role_id AS id, r.name, r.description, r.active, r.created, r.last_update AS lastUpdate
@@ -176,7 +176,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     {
         $permission = $this->permissionMapper->fetchByName($permissionName);
 
-        return $this->fetchByPermissionId($permission->getId());
+        return $this->fetchByPermissionId((int)$permission->getId());
     }
 
     /**
@@ -190,7 +190,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function fetchByUserId(int $userId): array
+    public function fetchByUserId(string|int $userId): array
     {
         $pdos = $this->pdo->prepare('
         SELECT r.role_id AS id, r.name, r.description, r.active, r.created, r.last_update AS lastUpdate
@@ -212,7 +212,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     {
         $user = $this->userMapper->fetchByName($userName);
 
-        return $this->fetchByUserId($user->getId());
+        return $this->fetchByUserId((int)$user->getId());
     }
 
     /**
@@ -404,7 +404,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    protected function concreteInsert(DomainObjectInterface &$role)
+    protected function concreteInsert(DomainObjectInterface &$role): void
     {
         $this->checkDomainObjectType($role);
 
@@ -425,7 +425,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    protected function concreteUpdate(DomainObjectInterface $role)
+    protected function concreteUpdate(DomainObjectInterface $role): void
     {
         $this->checkDomainObjectType($role);
 
@@ -447,7 +447,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    protected function concreteDelete(DomainObjectInterface &$role)
+    protected function concreteDelete(DomainObjectInterface &$role): void
     {
         $this->checkDomainObjectType($role);
 
@@ -468,7 +468,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    protected function checkDomainObjectType(DomainObjectInterface $domainObject)
+    protected function checkDomainObjectType(DomainObjectInterface $domainObject): void
     {
         if (!($domainObject instanceof Role)) {
             throw new InvalidArgumentException('Domain Object parameter must be instance of Role class');

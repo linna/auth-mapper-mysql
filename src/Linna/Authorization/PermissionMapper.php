@@ -47,7 +47,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function fetchById(int $permissionId): DomainObjectInterface
+    public function fetchById(string|int $permissionId): DomainObjectInterface
     {
         $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE permission_id = :id");
 
@@ -292,7 +292,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     /**
      * {@inheritdoc}
      */
-    protected function concreteInsert(DomainObjectInterface &$permission)
+    protected function concreteInsert(DomainObjectInterface &$permission): void
     {
         $this->checkDomainObjectType($permission);
 
@@ -312,7 +312,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     /**
      * {@inheritdoc}
      */
-    protected function concreteUpdate(DomainObjectInterface $permission)
+    protected function concreteUpdate(DomainObjectInterface $permission): void
     {
         $this->checkDomainObjectType($permission);
 
@@ -333,7 +333,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     /**
      * {@inheritdoc}
      */
-    protected function concreteDelete(DomainObjectInterface &$permission)
+    protected function concreteDelete(DomainObjectInterface &$permission): void
     {
         $this->checkDomainObjectType($permission);
 
@@ -354,7 +354,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     /**
      * {@inheritdoc}
      */
-    protected function checkDomainObjectType(DomainObjectInterface $domainObject)
+    protected function checkDomainObjectType(DomainObjectInterface $domainObject): void
     {
         if (!($domainObject instanceof Permission)) {
             throw new InvalidArgumentException('Domain Object parameter must be instance of Permission class');
