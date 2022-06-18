@@ -44,4 +44,4 @@ jobs:
         run: mysql -uroot -h0.0.0.0 -ppassword < vendor/linna/db-dumps/src/linna_db_mysql_test.sql
 
       - name: Execute tests
-        run: vendor/bin/phpunit -c phpunit.actions.xml --verbose
+        run: vendor/bin/phpunit -c phpunit.xml --verbose
