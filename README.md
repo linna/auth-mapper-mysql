@@ -12,6 +12,7 @@
 
 <div align="center">
 
+[![Tests](https://github.com/linna/auth-mapper-mysql/actions/workflows/tests.yml/badge.svg)](https://github.com/linna/auth-mapper-mysql/actions/workflows/tests.yml)
 [![StyleCI](https://github.styleci.io/repos/155237916/shield?branch=master&style=flat)](https://github.styleci.io/repos/155237916)
 [![PDS Skeleton](https://img.shields.io/badge/pds-skeleton-blue.svg?style=flat)](https://github.com/php-pds/skeleton)
 [![PHP 8.1](https://img.shields.io/badge/PHP-8.1-8892BF.svg)](http://php.net)
