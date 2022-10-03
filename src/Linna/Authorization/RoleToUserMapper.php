@@ -21,14 +21,10 @@ use PDO;
  */
 class RoleToUserMapper implements RoleToUserMapperInterface
 {
-    /**
-     * @var Password Password util for user object
-     */
+    /** @var Password Password util for user object */
     protected Password $password;
 
-    /**
-     * @var ExtendedPDO Database Connection
-     */
+    /** @var ExtendedPDO Database Connection */
     protected ExtendedPDO $pdo;
 
     /**
@@ -68,7 +64,7 @@ class RoleToUserMapper implements RoleToUserMapperInterface
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, EnhancedUser::class, [$this->password, [], []]);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -91,7 +87,7 @@ class RoleToUserMapper implements RoleToUserMapperInterface
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, EnhancedUser::class, [$this->password, [], []]);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -119,7 +115,7 @@ class RoleToUserMapper implements RoleToUserMapperInterface
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Role::class, [[], []]);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -141,6 +137,6 @@ class RoleToUserMapper implements RoleToUserMapperInterface
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Role::class, [[], []]);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 }

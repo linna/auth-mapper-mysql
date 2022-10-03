@@ -22,9 +22,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
 {
     use EnhancedAuthenticationMapperTrait;
 
-    /**
-     * @var string Date format string.
-     */
+    /** @var string Date format string. */
     protected static string $date_format = 'Y-m-d H:i:s';
 
     /**
@@ -103,7 +101,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
             $loginAttempt->userName = $data[0];
             $loginAttempt->sessionId = $data[1];
             $loginAttempt->ipAddress = $data[2];
-            $loginAttempt->when = \date('YmdHis', ((\time() - 28) +  $timeSliding++));
+            $loginAttempt->when = date('YmdHis', ((time() - 28) +  $timeSliding++));
 
             self::$enhancedAuthenticationMapper->save($loginAttempt);
         }

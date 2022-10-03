@@ -24,14 +24,10 @@ use RuntimeException;
  */
 class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAuthenticationMapperInterface
 {
-    /**
-     * @var ExtendedPDO Database Connection
-     */
+    /** @var ExtendedPDO Database Connection */
     protected ExtendedPDO $pdo;
 
-    /**
-     * @var string Constant part of SELECT query
-     */
+    /** @var string Constant part of SELECT query */
     protected string $baseQuery = 'SELECT login_attempt_id AS id, user_name AS userName, session_id AS sessionId, ip, date_time AS "when", created, last_update AS lastUpdate FROM login_attempt';
 
     /**
@@ -76,7 +72,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, LoginAttempt::class);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -97,7 +93,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, LoginAttempt::class);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -114,7 +110,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $pdos->bindParam(':user_name', $userName, PDO::PARAM_STR);
 
-        $time = (int) \date('YmdHis', \time() - $timeInSeconds);
+        $time = (int) date('YmdHis', time() - $timeInSeconds);
         $pdos->bindParam(':time', $time, PDO::PARAM_INT);
 
         $pdos->execute();
@@ -136,7 +132,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $pdos->bindParam(':session_id', $sessionId, PDO::PARAM_STR);
 
-        $time = (int) \date('YmdHis', \time() - $timeInSeconds);
+        $time = (int) date('YmdHis', time() - $timeInSeconds);
         $pdos->bindParam(':time', $time, PDO::PARAM_INT);
 
         $pdos->execute();
@@ -158,7 +154,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 
         $pdos->bindParam(':ip', $ipAddress, PDO::PARAM_STR);
 
-        $time = (int) \date('YmdHis', \time() - $timeInSeconds);
+        $time = (int) date('YmdHis', time() - $timeInSeconds);
         $pdos->bindParam(':time', $time, PDO::PARAM_INT);
 
         $pdos->execute();
@@ -177,7 +173,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     {
         $pdos = $this->pdo->prepare('DELETE FROM login_attempt WHERE date_time < :time');
 
-        $time = (int) \date('YmdHis', \time() - $timeInSeconds);
+        $time = (int) date('YmdHis', time() - $timeInSeconds);
         $pdos->bindParam(':time', $time, PDO::PARAM_INT);
 
         $pdos->execute();
@@ -201,6 +197,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      * storage record.
      *
      * @param DomainObjectInterface $loginAttempt
+     *
      * @return void
      */
     protected function concreteInsert(DomainObjectInterface &$loginAttempt): void
@@ -227,6 +224,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      * Update a LoginAttempt object in persistent storage.
      *
      * @param DomainObjectInterface $loginAttempt
+     *
      * @return void
      */
     protected function concreteUpdate(DomainObjectInterface $loginAttempt): void
@@ -257,6 +255,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      * deletion.
      *
      * @param DomainObjectInterface $domainObject
+     *
      * @return void
      */
     protected function concreteDelete(DomainObjectInterface &$loginAttempt): void
@@ -280,7 +279,9 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      * Check for valid domain Object.
      *
      * @param DomainObjectInterface $domainObject
+     *
      * @return void
+     *
      * @throws InvalidArgumentException if the domain object isn't of the type required by mapper
      */
     protected function checkDomainObjectType(DomainObjectInterface $domainObject): void

@@ -24,14 +24,10 @@ use RuntimeException;
  */
 class PermissionMapper extends MapperAbstract implements PermissionMapperInterface
 {
-    /**
-     * @var ExtendedPDO Database Connection
-     */
+    /** @var ExtendedPDO Database Connection */
     protected ExtendedPDO $pdo;
 
-    /**
-     * @var string Constant part of SELECT query
-     */
+    /** @var string Constant part of SELECT query */
     protected string $baseQuery = 'SELECT permission_id AS id, name, description, created, last_update AS lastUpdate FROM permission';
 
     /**
@@ -85,7 +81,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -101,7 +97,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -129,7 +125,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -151,7 +147,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -191,7 +187,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -225,7 +221,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -252,7 +248,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
         $pdos->execute();
 
-        return \array_flip($pdos->fetchAll(PDO::FETCH_COLUMN));
+        return array_flip($pdos->fetchAll(PDO::FETCH_COLUMN));
     }
 
     /**

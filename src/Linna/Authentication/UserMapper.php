@@ -25,19 +25,13 @@ use RuntimeException;
  */
 class UserMapper extends MapperAbstract implements UserMapperInterface
 {
-    /**
-     * @var Password Password util for user object
-     */
+    /** @var Password Password util for user object */
     protected Password $password;
 
-    /**
-     * @var ExtendedPDO Database Connection
-     */
+    /** @var ExtendedPDO Database Connection */
     protected ExtendedPDO $pdo;
 
-    /**
-     * @var string Constant part of SELECT query
-     */
+    /** @var string Constant part of SELECT query */
     protected string $baseQuery = 'SELECT user_id AS id, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user';
 
     /**
@@ -82,7 +76,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
     {
         $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE md5(name) = :name");
 
-        $hashedUserName = \md5($userName);
+        $hashedUserName = md5($userName);
 
         $pdos->bindParam(':name', $hashedUserName, PDO::PARAM_STR);
         $pdos->execute();
@@ -105,7 +99,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -126,7 +120,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
 
         $array = $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
 
-        return \array_combine(\array_column($array, 'id'), $array);
+        return array_combine(array_column($array, 'id'), $array);
     }
 
     /**
@@ -145,6 +139,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      * storage record.
      *
      * @param DomainObjectInterface $user
+     *
      * @return void
      */
     protected function concreteInsert(DomainObjectInterface &$user): void
@@ -171,6 +166,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      * Update a User object in persistent storage.
      *
      * @param DomainObjectInterface $user
+     *
      * @return void
      */
     protected function concreteUpdate(DomainObjectInterface $user): void
@@ -201,6 +197,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      * deletion.
      *
      * @param DomainObjectInterface $domainObject
+     *
      * @return void
      */
     protected function concreteDelete(DomainObjectInterface &$user): void
@@ -224,7 +221,9 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      * Check for valid domain Object.
      *
      * @param DomainObjectInterface $domainObject
+     *
      * @return void
+     *
      * @throws InvalidArgumentException if the domain object isn't of the type required by mapper
      */
     protected function checkDomainObjectType(DomainObjectInterface $domainObject): void
