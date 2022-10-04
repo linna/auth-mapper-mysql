@@ -65,7 +65,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function fetchById(string|int $roleId): DomainObjectInterface
+    public function fetchById(int|string $roleId): DomainObjectInterface
     {
         $users = $this->roleToUserMapper->fetchByRoleId($roleId);
         $permissions = $this->permissionMapper->fetchByRoleId($roleId);
@@ -144,7 +144,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function fetchByPermissionId(string|int $permissionId): array
+    public function fetchByPermissionId(int|string $permissionId): array
     {
         $pdos = $this->pdo->prepare('
         SELECT r.role_id AS id, r.name, r.description, r.active, r.created, r.last_update AS lastUpdate
@@ -180,7 +180,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function fetchByUserId(string|int $userId): array
+    public function fetchByUserId(int|string $userId): array
     {
         $pdos = $this->pdo->prepare('
         SELECT r.role_id AS id, r.name, r.description, r.active, r.created, r.last_update AS lastUpdate
@@ -250,7 +250,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function grantPermissionById(Role &$role, int $permissionId)
+    public function grantPermissionById(Role &$role, int|string $permissionId)
     {
         $roleId = $role->getId();
 
@@ -288,7 +288,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function revokePermissionById(Role &$role, int $permissionId)
+    public function revokePermissionById(Role &$role, int|string $permissionId)
     {
         $roleId = $role->getId();
 
@@ -322,7 +322,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function addUserById(Role &$role, int $userId)
+    public function addUserById(Role &$role, int|string $userId)
     {
         $roleId = $role->getId();
 
@@ -360,7 +360,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * {@inheritdoc}
      */
-    public function removeUserById(Role &$role, int $userId)
+    public function removeUserById(Role &$role, int|string $userId)
     {
         $roleId = $role->getId();
 
