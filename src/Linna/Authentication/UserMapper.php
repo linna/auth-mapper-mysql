@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Linna\Authentication;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
 use Linna\DataMapper\DomainObjectAbstract;
 use Linna\DataMapper\DomainObjectInterface;
@@ -25,14 +26,9 @@ use RuntimeException;
  */
 class UserMapper extends MapperAbstract implements UserMapperInterface
 {
-    /** @var Password Password util for user object */
-    protected Password $password;
+    private const QUERY_BASE = 'SELECT user_id , uuid, name, email, description, password, active, created, last_update FROM user';
 
-    /** @var ExtendedPDO Database Connection */
-    protected ExtendedPDO $pdo;
-
-    /** @var string Constant part of SELECT query */
-    protected string $baseQuery = 'SELECT user_id AS id, uuid, name, email, description, password, active, created, last_update AS lastUpdate FROM user';
+    private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of User class';
 
     /**
      * Constructor.
@@ -40,10 +36,42 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      * @param ExtendedPDO $pdo
      * @param Password    $password
      */
-    public function __construct(ExtendedPDO $pdo, Password $password)
+    public function __construct(
+        /** @var ExtendedPDO Database Connection */
+        protected ExtendedPDO $pdo,
+
+        /** @var Password Password util for user object */
+        protected Password $password = new Password()
+    ) {
+    }
+
+    /**
+     * Hydrate an array of objects.
+     *
+     * @param array<int, stdClass> $array the array containing the resultset from database
+     *
+     * @return array<int, User>
+     */
+    private static function hydrator(array $array): array
     {
-        $this->pdo = $pdo;
-        $this->password = $password;
+        $tmp = [];
+
+        foreach ($array as $value) {
+            $tmp[] = new User(
+                passwordUtility: $this->password,
+                id:              $value->user_id,
+                uuid:            $value->uuid,
+                name:            $value->name,
+                description:     $value->session_id,
+                email:           $value->email,
+                password:        $value->password,
+                active:          $value->active,
+                created:         new DateTimeImmutable($value->created),
+                lastUpdate:      new DateTimeImmutable($value->last_update)
+            );
+        }
+
+        return $tmp;
     }
 
     /**
@@ -55,14 +83,29 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     public function fetchById(int|string $userId): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE user_id = :id");
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE user_id = :id');
+        $stmt->bindParam(':id', $loginAttemptId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
-        $pdos->execute();
+        //fail fast
+        if (($stdClass = $stmt->fetchObject()) === false) {
+            return new NullDomainObject();
+        }
 
-        $result = $pdos->fetchObject(User::class, [$this->password]);
-
-        return ($result instanceof User) ? $result : new NullDomainObject();
+        //return result
+        return new User(
+            passwordUtility: $this->password,
+            id:              $stdClass->user_id,
+            uuid:            $stdClass->uuid,
+            name:            $stdClass->name,
+            description:     $stdClass->session_id,
+            email:           $stdClass->email,
+            password:        $stdClass->password,
+            active:          $stdClass->active,
+            created:         new DateTimeImmutable($stdClass->created),
+            lastUpdate:      new DateTimeImmutable($stdClass->last_update)
+        );
     }
 
     /**
@@ -74,16 +117,32 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     public function fetchByName(string $userName): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE md5(name) = :name");
-
+        //handle user name
         $hashedUserName = md5($userName);
 
-        $pdos->bindParam(':name', $hashedUserName, PDO::PARAM_STR);
-        $pdos->execute();
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE md5(name) = :name');
+        $stmt->bindParam(':name', $hashedUserName, PDO::PARAM_STR);
+        $stmt->execute();
 
-        $result = $pdos->fetchObject(User::class, [$this->password]);
+        //fail fast
+        if (($stdClass = $stmt->fetchObject()) === false) {
+            return new NullDomainObject();
+        }
 
-        return ($result instanceof User) ? $result : new NullDomainObject();
+        //return result
+        return new User(
+            passwordUtility: $this->password,
+            id:              $stdClass->user_id,
+            uuid:            $stdClass->uuid,
+            name:            $stdClass->name,
+            description:     $stdClass->session_id,
+            email:           $stdClass->email,
+            password:        $stdClass->password,
+            active:          $stdClass->active,
+            created:         new DateTimeImmutable($stdClass->created),
+            lastUpdate:      new DateTimeImmutable($stdClass->last_update)
+        );
     }
 
     /**
@@ -93,13 +152,19 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY name ASC");
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE);
+        $stmt->execute();
 
-        $pdos->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        $array = $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
 
-        return array_combine(array_column($array, 'id'), $array);
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -112,15 +177,21 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY name ASC LIMIT :offset, :rowcount");
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' ORDER BY name ASC LIMIT :offset, :rowcount');
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
+        $stmt->execute();
 
-        $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
-        $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
-        $pdos->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        $array = $pdos->fetchAll(PDO::FETCH_CLASS, User::class, [$this->password]);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
 
-        return array_combine(array_column($array, 'id'), $array);
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -130,7 +201,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     protected function concreteCreate(): DomainObjectInterface
     {
-        return new User($this->password);
+        return new User(passwordUtility: $this->password);
     }
 
     /**
@@ -144,17 +215,25 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     protected function concreteInsert(DomainObjectInterface &$user): void
     {
-        $this->checkDomainObjectType($user);
+        \assert($user instanceof User, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
+
+        //get value to be passed as reference
+        $created = $user->created->format(DATE_ATOM);
+        $lastUpdate = $user->lastUpdate->format(DATE_ATOM);
 
         try {
-            $pdos = $this->pdo->prepare('INSERT INTO user (uuid, name, email, description, password, created) VALUES (:uuid, :name, :email, :description, :password, NOW())');
+            //make query
+            $stmt = $this->pdo->prepare('INSERT INTO user (uuid, name, email, description, password, created, last_update) 
+                VALUES (:uuid, :name, :email, :description, :password, :created, :last_update)');
+            $stmt->bindParam(':uuid', $user->uuid, PDO::PARAM_STR);
+            $stmt->bindParam(':name', $user->name, PDO::PARAM_STR);
+            $stmt->bindParam(':email', $user->email, PDO::PARAM_STR);
+            $stmt->bindParam(':description', $user->description, PDO::PARAM_STR);
+            $stmt->bindParam(':password', $user->password, PDO::PARAM_STR);
+            $stmt->bindParam(':created', $created, PDO::PARAM_STR);
+            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
 
-            $pdos->bindParam(':uuid', $user->uuid, PDO::PARAM_STR);
-            $pdos->bindParam(':name', $user->name, PDO::PARAM_STR);
-            $pdos->bindParam(':email', $user->email, PDO::PARAM_STR);
-            $pdos->bindParam(':description', $user->description, PDO::PARAM_STR);
-            $pdos->bindParam(':password', $user->password, PDO::PARAM_STR);
-            $pdos->execute();
+            $stmt->execute();
 
             $user->setId((int) $this->pdo->lastInsertId());
         } catch (RuntimeException $e) {
@@ -171,21 +250,27 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     protected function concreteUpdate(DomainObjectInterface $user): void
     {
-        $this->checkDomainObjectType($user);
+        \assert($user instanceof User, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
 
+        //get value to be passed as reference
         $objId = $user->getId();
+        $lastUpdate = $user->lastUpdate->format(DATE_ATOM);
 
         try {
-            $pdos = $this->pdo->prepare('UPDATE user SET name = :name, email = :email, description = :description,  password = :password, active = :active WHERE user_id = :id');
+            //make query
+            $stmt = $this->pdo->prepare('UPDATE user 
+                SET name = :name, email = :email, description = :description,  password = :password, active = :active, last_update = :last_update 
+                WHERE user_id = :id');
 
-            $pdos->bindParam(':id', $objId, PDO::PARAM_INT);
-            $pdos->bindParam(':name', $user->name, PDO::PARAM_STR);
-            $pdos->bindParam(':email', $user->email, PDO::PARAM_STR);
-            $pdos->bindParam(':password', $user->password, PDO::PARAM_STR);
-            $pdos->bindParam(':description', $user->description, PDO::PARAM_STR);
-            $pdos->bindParam(':active', $user->active, PDO::PARAM_INT);
+            $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
+            $stmt->bindParam(':name', $user->name, PDO::PARAM_STR);
+            $stmt->bindParam(':email', $user->email, PDO::PARAM_STR);
+            $stmt->bindParam(':description', $user->description, PDO::PARAM_STR);
+            $stmt->bindParam(':password', $user->password, PDO::PARAM_STR);
+            $stmt->bindParam(':active', $user->active, PDO::PARAM_INT);
+            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
 
-            $pdos->execute();
+            $stmt->execute();
         } catch (RuntimeException $e) {
             echo 'Update not compled, ', $e->getMessage(), "\n";
         }
@@ -202,14 +287,15 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     protected function concreteDelete(DomainObjectInterface &$user): void
     {
-        $this->checkDomainObjectType($user);
+        \assert($user instanceof User, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
 
+        //get value to be passed as reference
         $objId = $user->getId();
 
         try {
-            $pdos = $this->pdo->prepare('DELETE FROM user WHERE user_id = :id');
-            $pdos->bindParam(':id', $objId, PDO::PARAM_INT);
-            $pdos->execute();
+            $stmt = $this->pdo->prepare('DELETE FROM user WHERE user_id = :id');
+            $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
+            $stmt->execute();
 
             $user = new NullDomainObject();
         } catch (RuntimeException $e) {
@@ -228,8 +314,8 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     protected function checkDomainObjectType(DomainObjectInterface $domainObject): void
     {
-        if (!($domainObject instanceof User)) {
+        /*if (!($domainObject instanceof User)) {
             throw new InvalidArgumentException('Domain Object parameter must be instance of User class');
-        }
+        }*/
     }
 }

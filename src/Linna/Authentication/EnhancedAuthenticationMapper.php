@@ -28,23 +28,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
 {
     private const QUERY_BASE = 'SELECT login_attempt_id, user_name, session_id, ip, date_time, created, last_update FROM login_attempt';
 
-    private const QUERY_FETCH_ID = self::QUERY_BASE.' WHERE login_attempt_id = :id';
-
-    private const QUERY_LIMIT = self::QUERY_BASE.' ORDER BY date_time ASC LIMIT :offset, :rowcount';
-
-    private const QUERY_ATTEMPTS_SAME_USER = 'SELECT count(user_name) as attempts FROM login_attempt WHERE user_name = :user_name AND date_time > :time';
-
-    private const QUERY_ATTEMPTS_SAME_SESSION = 'SELECT count(session_id) as attempts FROM login_attempt WHERE session_id = :session_id AND date_time > :time';
-
-    private const QUERY_ATTEMPTS_SAME_IP = 'SELECT count(ip) as attempts FROM login_attempt WHERE ip = :ip AND date_time > :time';
-
-    private const QUERY_ATTEMPTS_DELETE = 'DELETE FROM login_attempt WHERE date_time < :time';
-
-    private const QUERY_INSERT = 'INSERT INTO login_attempt (user_name, session_id, ip, date_time) VALUES (:user_name, :session_id, :ip, :date_time)';
-
-    //private const QUERY_UPDATE = 'UPDATE login_attempt SET user_name = :user_name,  session_id = :session_id, ip = :ip,  date_time = :date_time WHERE login_attempt_id = :id';
-
-    private const QUERY_DELETE = 'DELETE FROM login_attempt WHERE login_attempt_id = :id';
+    private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of LoginAttempt class';
 
     /**
      * Class Constructor.
@@ -53,7 +37,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      */
     public function __construct(
         /** @var ExtendedPDO Database Connection */
-         protected ExtendedPDO $pdo
+        protected ExtendedPDO $pdo
     ) {
     }
 
@@ -93,7 +77,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     public function fetchById(int|string $loginAttemptId): DomainObjectInterface
     {
         //make query
-        $stmt = $this->pdo->prepare(self::QUERY_FETCH_ID);
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE login_attempt_id = :id');
         $stmt->bindParam(':id', $loginAttemptId, PDO::PARAM_INT);
         $stmt->execute();
 
@@ -147,7 +131,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     public function fetchLimit(int $offset, int $rowCount): array
     {
         //make query
-        $stmt = $this->pdo->prepare(self::QUERY_LIMIT);
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' ORDER BY date_time ASC LIMIT :offset, :rowcount');
         $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
         $stmt->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
         $stmt->execute();
@@ -177,7 +161,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
         $time = (int) date('YmdHis', time() - $timeInSeconds);
 
         //make query
-        $stmt = $this->pdo->prepare(self::QUERY_ATTEMPTS_SAME_USER);
+        $stmt = $this->pdo->prepare('SELECT count(user_name) as attempts FROM login_attempt WHERE user_name = :user_name AND date_time > :time');
         $stmt->bindParam(':user_name', $userName, PDO::PARAM_STR);
         $stmt->bindParam(':time', $time, PDO::PARAM_INT);
         $stmt->execute();
@@ -200,7 +184,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
         $time = (int) date('YmdHis', time() - $timeInSeconds);
 
         //make query
-        $stmt = $this->pdo->prepare(self::QUERY_ATTEMPTS_SAME_SESSION);
+        $stmt = $this->pdo->prepare('SELECT count(session_id) as attempts FROM login_attempt WHERE session_id = :session_id AND date_time > :time');
         $stmt->bindParam(':session_id', $sessionId, PDO::PARAM_STR);
         $stmt->bindParam(':time', $time, PDO::PARAM_INT);
         $stmt->execute();
@@ -223,7 +207,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
         $time = (int) date('YmdHis', time() - $timeInSeconds);
 
         //make query
-        $stmt = $this->pdo->prepare(self::QUERY_ATTEMPTS_SAME_IP);
+        $stmt = $this->pdo->prepare('SELECT count(ip) as attempts FROM login_attempt WHERE ip = :ip AND date_time > :time');
         $stmt->bindParam(':ip', $ipAddress, PDO::PARAM_STR);
         $stmt->bindParam(':time', $time, PDO::PARAM_INT);
         $stmt->execute();
@@ -245,7 +229,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
         $time = (int) date('YmdHis', time() - $timeInSeconds);
 
         //make query
-        $stmt = $this->pdo->prepare(self::QUERY_ATTEMPTS_DELETE);
+        $stmt = $this->pdo->prepare('DELETE FROM login_attempt WHERE date_time < :time');
         $stmt->bindParam(':time', $time, PDO::PARAM_INT);
         $stmt->execute();
 
@@ -273,18 +257,24 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      */
     protected function concreteInsert(DomainObjectInterface &$loginAttempt): void
     {
-        \assert($loginAttempt instanceof LoginAttempt, new InvalidArgumentException('Domain Object parameter must be instance of LoginAttempt class'));
+        \assert($loginAttempt instanceof LoginAttempt, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
 
-        //get value to be passed as reference
+        //get values to be passed as reference
         $dateTime = $loginAttempt->when->format(DATE_ATOM);
+        $created = $loginAttempt->created->format(DATE_ATOM);
+        $lastUpdate = $loginAttempt->lastUpdate->format(DATE_ATOM);
 
         try {
             //make query
-            $stmt = $this->pdo->prepare(self::QUERY_INSERT);
+            $stmt = $this->pdo->prepare('INSERT INTO login_attempt (user_name, session_id, ip, date_time, created, last_update) 
+                VALUES (:user_name, :session_id, :ip, :date_time, :created, :last_update)');
             $stmt->bindParam(':user_name', $loginAttempt->userName, PDO::PARAM_STR);
             $stmt->bindParam(':session_id', $loginAttempt->sessionId, PDO::PARAM_STR);
             $stmt->bindParam(':ip', $loginAttempt->ipAddress, PDO::PARAM_STR);
             $stmt->bindParam(':date_time', $dateTime, PDO::PARAM_STR);
+            $stmt->bindParam(':created', $created, PDO::PARAM_STR);
+            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
+
             $stmt->execute();
 
             //update current object
@@ -303,7 +293,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      */
     protected function concreteUpdate(DomainObjectInterface $loginAttempt): void
     {
-        \assert($loginAttempt instanceof LoginAttempt, new InvalidArgumentException('Domain Object parameter must be instance of LoginAttempt class'));
+        //\assert($loginAttempt instanceof LoginAttempt, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
 
         throw new RuntimeException('LoginAttempt class instance does not implement updates');
     }
@@ -319,13 +309,13 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      */
     protected function concreteDelete(DomainObjectInterface &$loginAttempt): void
     {
-        \assert($loginAttempt instanceof LoginAttempt, new InvalidArgumentException('Domain Object parameter must be instance of LoginAttempt class'));
+        \assert($loginAttempt instanceof LoginAttempt, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
 
         $objId = $loginAttempt->getId();
 
         try {
             //make query
-            $stmt = $this->pdo->prepare(self::QUERY_DELETE);
+            $stmt = $this->pdo->prepare('DELETE FROM login_attempt WHERE login_attempt_id = :id');
             $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
             $stmt->execute();
 
