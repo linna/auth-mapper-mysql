@@ -11,7 +11,8 @@ declare(strict_types=1);
 
 namespace Linna\Authorization;
 
-use InvalidArgumentException;
+use DateTimeImmutable;
+//use InvalidArgumentException;
 use Linna\Authentication\Password;
 use Linna\Authentication\User;
 use Linna\Authentication\UserMapper;
@@ -20,37 +21,74 @@ use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
 use PDOException;
-use PDOStatement;
+//use PDOStatement;
+use stdClass;
 
 /**
  * EnhancedUserMapper.
  */
 class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterface
 {
-    /** @var PermissionMapperInterface Permission Mapper */
-    protected PermissionMapperInterface $permissionMapper;
-
-    /** @var RoleToUserMapperInterface Role to user Mapper */
-    protected RoleToUserMapperInterface $roleToUserMapper;
+    private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of EnhancedUser class';
 
     /**
      * Class Constructor.
      *
-     * @param ExtendedPDO               $pdo
-     * @param Password                  $password
-     * @param PermissionMapperInterface $permissionMapper
-     * @param RoleToUserMapperInterface $roleToUserMapper
+     * @param ExtendedPDO               $pdo              Valid <code>PDO</code> instace to interact with the persistent storage.
+     * @param Password                  $password         <code>Password</code> instance to manage passwords.
+     * @param PermissionMapperInterface $permissionMapper Permission mapper.
+     * @param RoleToUserMapperInterface $roleToUserMapper Role to user mapper.
      */
     public function __construct(
+        //pdo for parent class
         ExtendedPDO $pdo,
-        Password $password,
-        PermissionMapperInterface $permissionMapper,
-        RoleToUserMapperInterface $roleToUserMapper
-    ) {
-        parent::__construct($pdo, $password);
 
-        $this->permissionMapper = $permissionMapper;
-        $this->roleToUserMapper = $roleToUserMapper;
+        //password for parent class
+        Password $password,
+
+        /** @var PermissionMapperInterface Permission Mapper */
+        protected PermissionMapperInterface $permissionMapper,
+
+        /** @var RoleToUserMapperInterface Role to user Mapper */
+        protected RoleToUserMapperInterface $roleToUserMapper
+    ) {
+        parent::__construct(pdo: $pdo, passwordUtility: $password);
+    }
+
+    /**
+     * Hydrate an array of objects.
+     *
+     * @param array<int, stdClass> $array The array containing the resultset from database.
+     *
+     * @return array<int, EnhancedUser>
+     */
+    private static function hydrator(array $array): array
+    {
+        $tmp = [];
+
+        foreach ($array as $value) {
+
+            //get roles and permissions
+            $roles = $value->roleToUserMapper->fetchByUserId($value->user_id);
+            $permissions = $value->permissionMapper->fetchByUserId($value->user_id);
+
+            $tmp[] = new EnhancedUser(//pass password as argument
+                passwordUtility: parent::$password, // from parent user mapper
+                id:              $value->user_id,
+                uuid:            $value->uuid,
+                name:            $value->name,
+                description:     $value->session_id,
+                email:           $value->email,
+                password:        $value->password,
+                active:          $value->active,
+                created:         new DateTimeImmutable($value->created),
+                lastUpdate:      new DateTimeImmutable($value->last_update),
+                roles:           $roles,
+                permissions:     $permissions
+            );
+        }
+
+        return $tmp;
     }
 
     /**
@@ -58,22 +96,35 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchById(int|string $userId): DomainObjectInterface
     {
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE user_id = :id');
+        $stmt->bindParam(':id', $loginAttemptId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        //fail fast
+        if (($stdClass = $stmt->fetchObject()) === false) {
+            return new NullDomainObject();
+        }
+
+        //get roles and permissions
         $roles = $this->roleToUserMapper->fetchByUserId($userId);
         $permissions = $this->permissionMapper->fetchByUserId($userId);
 
-        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE user_id = :id");
-        $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
-        $pdos->execute();
-
-        $user = $pdos->fetchObject(EnhancedUser::class, [$this->password, $roles, $permissions]);
-
-        unset($roles, $permissions);
-
-        if ($user instanceof EnhancedUser) {
-            return $user;
-        }
-
-        return new NullDomainObject();
+        //return result
+        return new EnhancedUser(
+            passwordUtility: parent::$password,
+            id:              $stdClass->user_id,
+            uuid:            $stdClass->uuid,
+            name:            $stdClass->name,
+            description:     $stdClass->session_id,
+            email:           $stdClass->email,
+            password:        $stdClass->password,
+            active:          $stdClass->active,
+            created:         new DateTimeImmutable($stdClass->created),
+            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
+            roles:           $roles,
+            permissions:     $permissions
+        );
     }
 
     /**
@@ -81,8 +132,10 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchByName(string $userName): DomainObjectInterface
     {
+        //use parent fetch by name to get user
         $user = parent::fetchByName($userName);
 
+        //if user is valid get the EnhancedUser
         if ($user instanceof User) {
             return $this->fetchById($user->getId());
         }
@@ -95,10 +148,19 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY name ASC");
-        $pdos->execute();
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE);
+        $stmt->execute();
 
-        return $this->EnhancedUserCompositor($pdos);
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -106,13 +168,21 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} ORDER BY name ASC LIMIT :offset, :rowcount");
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' ORDER BY name ASC LIMIT :offset, :rowcount');
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
+        $stmt->execute();
 
-        $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
-        $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
-        $pdos->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        return $this->EnhancedUserCompositor($pdos);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -128,26 +198,42 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchByPermissionId(int|string $permissionId): array
     {
-        $pdos = $this->pdo->prepare('
-        (SELECT u.user_id AS id, u.uuid, u.name, u.email, u.description, 
-        u.password, u.active, u.created, u.last_update AS "lastUpdate" 
-        FROM user AS u
-        INNER JOIN user_permission AS up
-        ON u.user_id = up.user_id
-        WHERE up.permission_id = :id)
-        UNION
-        (SELECT u.user_id AS id, u.uuid, u.name, u.email, u.description, 
-        u.password, u.active, u.created, u.last_update AS "lastUpdate" 
-        FROM user AS u
-        INNER JOIN user_role AS ur ON u.user_id = ur.user_id
-        INNER JOIN role AS r ON ur.role_id = r.role_id
-        INNER JOIN role_permission AS rp ON r.role_id = rp.role_id
-        WHERE rp.permission_id = :id)');
+        //make query
+        $stmt = $this->pdo->prepare('
+        (SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_permission AS up ON u.user_id = up.user_id
+        WHERE
+            up.permission_id = :id) 
+        UNION 
+        (SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_role AS ur ON u.user_id = ur.user_id
+                INNER JOIN
+            role AS r ON ur.role_id = r.role_id
+                INNER JOIN
+            role_permission AS rp ON r.role_id = rp.role_id
+        WHERE
+            rp.permission_id = :id)');
 
-        $pdos->bindParam(':id', $permissionId, PDO::PARAM_INT);
-        $pdos->execute();
+        $stmt->bindParam(':id', $permissionId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return $this->EnhancedUserCompositor($pdos);
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -157,7 +243,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     {
         $permission = $this->permissionMapper->fetchByName($permissionName);
 
-        return $this->fetchByPermissionId((int)$permission->getId());
+        return $this->fetchByPermissionId($permission->getId());
     }
 
     /**
@@ -173,18 +259,29 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchByRoleId(int|string $roleId): array
     {
-        $pdos = $this->pdo->prepare('
-        SELECT u.user_id AS id, u.uuid, u.name, u.email, u.description, 
-        u.password, u.active, u.created, u.last_update AS lastUpdate
-        FROM user AS u
-        INNER JOIN user_role AS ur 
-        ON u.user_id = ur.user_id
-        WHERE ur.role_id = :id');
+        //make query
+        $stmt = $this->pdo->prepare('
+        SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_role AS ur ON u.user_id = ur.user_id
+        WHERE
+            ur.role_id = :id');
 
-        $pdos->bindParam(':id', $roleId, PDO::PARAM_INT);
-        $pdos->execute();
+        $stmt->bindParam(':id', $roleId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return $this->EnhancedUserCompositor($pdos);
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -192,20 +289,32 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function fetchByRoleName(string $roleName): array
     {
-        $pdos = $this->pdo->prepare('
-        SELECT u.user_id id, u.uuid, u.name, u.email, u.description, 
-        u.password, u.active, u.created, u.last_update AS lastUpdate
-        FROM user AS u
-        INNER JOIN user_role AS ur 
-        INNER JOIN role AS r
-        ON u.user_id = ur.user_id
-        AND ur.role_id = r.role_id
-        WHERE r.name = :name');
+        //make query
+        $stmt = $this->pdo->prepare('
+        SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_role AS ur
+                INNER JOIN
+            role AS r ON u.user_id = ur.user_id
+                AND ur.role_id = r.role_id
+        WHERE
+            r.name = :id');
 
-        $pdos->bindParam(':name', $roleName, PDO::PARAM_STR);
-        $pdos->execute();
+        $stmt->bindParam(':name', $roleName, PDO::PARAM_STR);
+        $stmt->execute();
 
-        return $this->EnhancedUserCompositor($pdos);
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -217,7 +326,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      *
      * @return array
      */
-    protected function EnhancedUserCompositor(PDOStatement &$pdos): array
+    /*protected function EnhancedUserCompositor(PDOStatement &$pdos): array
     {
         $users = [];
 
@@ -244,7 +353,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         }
 
         return $users;
-    }
+    }*/
 
     /**
      * {@inheritdoc}
@@ -259,18 +368,21 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function grantPermissionById(EnhancedUser &$user, string|int $permissionId)
     {
+        //get values to be passed as reference
         $userId = $user->getId();
 
         try {
-            $pdos = $this->pdo->prepare('INSERT INTO user_permission (user_id, permission_id) VALUES (:user_id, :permission_id)');
+            //make query
+            $stmt = $this->pdo->prepare('INSERT INTO user_permission (user_id, permission_id) VALUES (:user_id, :permission_id)');
 
-            $pdos->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $pdos->bindParam(':permission_id', $permissionId, PDO::PARAM_INT);
-            $pdos->execute();
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':permission_id', $permissionId, PDO::PARAM_INT);
+            $stmt->execute();
 
+            //update current object
             $user = $this->fetchById($userId);
         } catch (PDOException $e) {
-            //here log the error
+            echo 'Insert not compled, ', $e->getMessage(), "\n";
         }
     }
 
@@ -297,15 +409,22 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function revokePermissionById(EnhancedUser &$user, int|string $permissionId)
     {
+        //get values to be passed as reference
         $userId = $user->getId();
 
-        $pdos = $this->pdo->prepare('DELETE FROM user_permission WHERE user_id = :user_id AND permission_id = :permission_id');
+        try {
+            //make query
+            $stmt = $this->pdo->prepare('DELETE FROM user_permission WHERE user_id = :user_id AND permission_id = :permission_id');
 
-        $pdos->bindParam(':user_id', $userId, PDO::PARAM_INT);
-        $pdos->bindParam(':permission_id', $permissionId, PDO::PARAM_INT);
-        $pdos->execute();
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':permission_id', $permissionId, PDO::PARAM_INT);
+            $stmt->execute();
 
-        $user = $this->fetchById($userId);
+            //update current object
+            $user = $this->fetchById($userId);
+        } catch (PDOException $e) {
+            echo 'Deletion not compled, ', $e->getMessage(), "\n";
+        }
     }
 
     /**
@@ -331,18 +450,21 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function addRoleById(EnhancedUser &$user, int|string $roleId)
     {
+        //get values to be passed as reference
         $userId = $user->getId();
 
         try {
-            $pdos = $this->pdo->prepare('INSERT INTO user_role (user_id, role_id) VALUES (:user_id, :role_id)');
+            //make query
+            $stmt = $this->pdo->prepare('INSERT INTO user_role (user_id, role_id) VALUES (:user_id, :role_id)');
 
-            $pdos->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $pdos->bindParam(':role_id', $roleId, PDO::PARAM_INT);
-            $pdos->execute();
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':role_id', $roleId, PDO::PARAM_INT);
+            $stmt->execute();
 
+            //update current object
             $user = $this->fetchById($userId);
         } catch (PDOException $e) {
-            //here log the error
+            echo 'Insert not compled, ', $e->getMessage(), "\n";
         }
     }
 
@@ -351,20 +473,22 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function addRoleByName(EnhancedUser &$user, string $roleName)
     {
+        //get values to be passed as reference
         $userId = $user->getId();
 
         try {
-            $pdos = $this->pdo->prepare(
-                'INSERT INTO user_role (user_id, role_id) VALUES (:user_id, (SELECT role_id FROM role WHERE name = :role_name))'
-            );
+            //make query
+            $stmt = $this->pdo->prepare('INSERT INTO user_role (user_id, role_id)
+            VALUES (:user_id, (SELECT role_id FROM role WHERE name = :role_name))');
 
-            $pdos->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $pdos->bindParam(':role_name', $roleName, PDO::PARAM_STR);
-            $pdos->execute();
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':role_name', $roleName, PDO::PARAM_STR);
+            $stmt->execute();
 
+            //update current object
             $user = $this->fetchById($userId);
         } catch (PDOException $e) {
-            //here log the error
+            echo 'Insert not compled, ', $e->getMessage(), "\n";
         }
     }
 
@@ -381,15 +505,22 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function removeRoleById(EnhancedUser &$user, int|string $roleId)
     {
+        //get values to be passed as reference
         $userId = $user->getId();
 
-        $pdos = $this->pdo->prepare('DELETE FROM user_role WHERE role_id = :role_id AND user_id = :user_id');
+        try {
+            //make query
+            $stmt = $this->pdo->prepare('DELETE FROM user_role WHERE role_id = :role_id AND user_id = :user_id');
 
-        $pdos->bindParam(':role_id', $roleId, PDO::PARAM_INT);
-        $pdos->bindParam(':user_id', $userId, PDO::PARAM_INT);
-        $pdos->execute();
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':role_name', $roleName, PDO::PARAM_STR);
+            $stmt->execute();
 
-        $user = $this->fetchById($userId);
+            //update current object
+            $user = $this->fetchById($userId);
+        } catch (PDOException $e) {
+            echo 'Deletion not compled, ', $e->getMessage(), "\n";
+        }
     }
 
     /**
@@ -397,17 +528,23 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     public function removeRoleByName(EnhancedUser &$user, string $roleName)
     {
+        //get values to be passed as reference
         $userId = $user->getId();
 
-        $pdos = $this->pdo->prepare(
-            'DELETE FROM user_role WHERE role_id = (SELECT role_id FROM role WHERE name = :role_name) AND user_id = :user_id'
-        );
+        try {
+            //make query
+            $stmt = $this->pdo->prepare('DELETE FROM user_role 
+            WHERE role_id = (SELECT role_id FROM role WHERE name = :role_name) AND user_id = :user_id');
 
-        $pdos->bindParam(':role_name', $roleName, PDO::PARAM_STR);
-        $pdos->bindParam(':user_id', $userId, PDO::PARAM_INT);
-        $pdos->execute();
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':role_name', $roleName, PDO::PARAM_STR);
+            $stmt->execute();
 
-        $user = $this->fetchById($userId);
+            //update current object
+            $user = $this->fetchById($userId);
+        } catch (PDOException $e) {
+            echo 'Deletion not compled, ', $e->getMessage(), "\n";
+        }
     }
 
     /**
@@ -415,16 +552,6 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      */
     protected function concreteCreate(): DomainObjectInterface
     {
-        return new EnhancedUser($this->password, [], []);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function checkDomainObjectType(DomainObjectInterface $domainObject): void
-    {
-        if (!($domainObject instanceof EnhancedUser)) {
-            throw new InvalidArgumentException('Domain Object parameter must be instance of EnhancedUser class');
-        }
+        return new EnhancedUser(passwordUtility: parent::$password);
     }
 }

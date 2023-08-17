@@ -44,7 +44,7 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
     /**
      * Hydrate an array of objects.
      *
-     * @param array<int, stdClass> $array the array containing the resultset from database
+     * @param array<int, stdClass> $array The array containing the resultset from database.
      *
      * @return array<int, LoginAttempt>
      */
@@ -324,21 +324,5 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
         } catch (RuntimeException $e) {
             echo 'Delete not compled, ', $e->getMessage(), "\n";
         }
-    }
-
-    /**
-     * Check for valid domain Object.
-     *
-     * @param DomainObjectInterface $domainObject
-     *
-     * @return void
-     *
-     * @throws InvalidArgumentException if the domain object isn't of the type required by mapper
-     */
-    protected function checkDomainObjectType(DomainObjectInterface $domainObject): void
-    {
-        /*if (!($domainObject instanceof LoginAttempt)) {
-            throw new InvalidArgumentException('Domain Object parameter must be instance of LoginAttempt class');
-        }*/
     }
 }

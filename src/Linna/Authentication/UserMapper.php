@@ -26,9 +26,12 @@ use RuntimeException;
  */
 class UserMapper extends MapperAbstract implements UserMapperInterface
 {
-    private const QUERY_BASE = 'SELECT user_id , uuid, name, email, description, password, active, created, last_update FROM user';
+    protected const QUERY_BASE = 'SELECT user_id , uuid, name, email, description, password, active, created, last_update FROM user';
 
     private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of User class';
+
+    /** @var Password Password util for user object */
+    protected static Password $password;
 
     /**
      * Constructor.
@@ -41,14 +44,15 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
         protected ExtendedPDO $pdo,
 
         /** @var Password Password util for user object */
-        protected Password $password = new Password()
+        Password $passwordUtility = new Password()
     ) {
+        self::$password = $passwordUtility;
     }
 
     /**
      * Hydrate an array of objects.
      *
-     * @param array<int, stdClass> $array the array containing the resultset from database
+     * @param array<int, stdClass> $array The array containing the resultset from database.
      *
      * @return array<int, User>
      */
@@ -56,9 +60,11 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
     {
         $tmp = [];
 
+        $password = new Password();
+
         foreach ($array as $value) {
-            $tmp[] = new User(
-                passwordUtility: $this->password,
+            $tmp[] = new User(//pass password as argument
+                passwordUtility: self::$password, // from the mapper
                 id:              $value->user_id,
                 uuid:            $value->uuid,
                 name:            $value->name,
@@ -85,7 +91,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
     {
         //make query
         $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE user_id = :id');
-        $stmt->bindParam(':id', $loginAttemptId, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
         $stmt->execute();
 
         //fail fast
@@ -95,7 +101,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
 
         //return result
         return new User(
-            passwordUtility: $this->password,
+            passwordUtility: self::$password,
             id:              $stdClass->user_id,
             uuid:            $stdClass->uuid,
             name:            $stdClass->name,
@@ -132,7 +138,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
 
         //return result
         return new User(
-            passwordUtility: $this->password,
+            passwordUtility: self::$password,
             id:              $stdClass->user_id,
             uuid:            $stdClass->uuid,
             name:            $stdClass->name,
@@ -301,21 +307,5 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
         } catch (RuntimeException $e) {
             echo 'Delete not compled, ', $e->getMessage(), "\n";
         }
-    }
-
-    /**
-     * Check for valid domain Object.
-     *
-     * @param DomainObjectInterface $domainObject
-     *
-     * @return void
-     *
-     * @throws InvalidArgumentException if the domain object isn't of the type required by mapper
-     */
-    protected function checkDomainObjectType(DomainObjectInterface $domainObject): void
-    {
-        /*if (!($domainObject instanceof User)) {
-            throw new InvalidArgumentException('Domain Object parameter must be instance of User class');
-        }*/
     }
 }
