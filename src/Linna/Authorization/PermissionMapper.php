@@ -12,32 +12,60 @@ declare(strict_types=1);
 namespace Linna\Authorization;
 
 use InvalidArgumentException;
+use DateTimeImmutable;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\MapperAbstract;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
+use PDOException;
 use RuntimeException;
+use stdClass;
 
 /**
  * PermissionMapper.
  */
 class PermissionMapper extends MapperAbstract implements PermissionMapperInterface
 {
-    /** @var ExtendedPDO Database Connection */
-    protected ExtendedPDO $pdo;
+    protected const QUERY_BASE = 'SELECT permission_id, name, description, 0 AS inherited, created, last_update FROM permission';
 
-    /** @var string Constant part of SELECT query */
-    protected string $baseQuery = 'SELECT permission_id AS id, name, description, created, last_update AS lastUpdate FROM permission';
+    private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of EnhancedUser class';
 
     /**
      * Constructor.
      *
      * @param ExtendedPDO $pdo
      */
-    public function __construct(ExtendedPDO $pdo)
+    public function __construct(
+        /** @var ExtendedPDO Database Connection */
+        protected ExtendedPDO $pdo
+    ) {
+    }
+
+    /**
+     * Hydrate an array of objects.
+     *
+     * @param array<int, stdClass> $array The array containing the resultset from database.
+     *
+     * @return array<int, EnhancedUser>
+     */
+    private static function hydrator(array $array): array
     {
-        $this->pdo = $pdo;
+        $tmp = [];
+
+        foreach ($array as $value) {
+
+            $tmp[] = new Permission(
+                id:              $value->user_id,
+                name:            $value->name,
+                description:     $value->session_id,
+                inherited:       $value->inherited,
+                created:         new DateTimeImmutable($value->created),
+                lastUpdate:      new DateTimeImmutable($value->last_update),
+            );
+        }
+
+        return $tmp;
     }
 
     /**
@@ -45,14 +73,24 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchById(int|string $permissionId): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE permission_id = :id");
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE user_id = :id');
+        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        $pdos->bindParam(':id', $permissionId, PDO::PARAM_INT);
-        $pdos->execute();
+        //fail fast
+        if (($stdClass = $stmt->fetchObject()) === false) {
+            return new NullDomainObject();
+        }
 
-        $result = $pdos->fetchObject(Permission::class);
-
-        return ($result instanceof Permission) ? $result : new NullDomainObject();
+        return new Permission(
+            id:              $stdClass->user_id,
+            name:            $stdClass->name,
+            description:     $stdClass->session_id,
+            inherited:       $stdClass->inherited,
+            created:         new DateTimeImmutable($stdClass->created),
+            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
+        );
     }
 
     /**
@@ -60,14 +98,28 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchByName(string $permissionName): DomainObjectInterface
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} WHERE name = :name");
+        //handle user name
+        $hashedUserName = md5($permissionName);
 
-        $pdos->bindParam(':name', $permissionName, PDO::PARAM_STR);
-        $pdos->execute();
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE md5(name) = :name');
+        $stmt->bindParam(':name', $hashedUserName, PDO::PARAM_STR);
+        $stmt->execute();
 
-        $result = $pdos->fetchObject(Permission::class);
+        //fail fast
+        if (($stdClass = $stmt->fetchObject()) === false) {
+            return new NullDomainObject();
+        }
 
-        return ($result instanceof Permission) ? $result : new NullDomainObject();
+        //return result
+        return new Permission(
+            id:              $stdClass->user_id,
+            name:            $stdClass->name,
+            description:     $stdClass->session_id,
+            inherited:       $stdClass->inherited,
+            created:         new DateTimeImmutable($stdClass->created),
+            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
+        );
     }
 
     /**
@@ -75,13 +127,19 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchAll(): array
     {
-        $pdos = $this->pdo->prepare($this->baseQuery);
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE);
+        $stmt->execute();
 
-        $pdos->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
 
-        return array_combine(array_column($array, 'id'), $array);
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -89,15 +147,21 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchLimit(int $offset, int $rowCount): array
     {
-        $pdos = $this->pdo->prepare("{$this->baseQuery} LIMIT :offset, :rowcount");
+        //make query
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' ORDER BY name ASC LIMIT :offset, :rowcount');
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
+        $stmt->execute();
 
-        $pdos->bindParam(':offset', $offset, PDO::PARAM_INT);
-        $pdos->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
-        $pdos->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
 
-        return array_combine(array_column($array, 'id'), $array);
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -113,19 +177,29 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchByRoleId(int|string $roleId): array
     {
-        $pdos = $this->pdo->prepare('
-        SELECT p.permission_id AS id, p.name, p.description, p.created, p.last_update AS lastUpdate
-        FROM permission AS p
-        INNER JOIN role_permission AS rp 
-        ON rp.permission_id = p.permission_id
-        WHERE rp.role_id = :id');
+        //make query
+        $stmt = $this->pdo->prepare('
+        SELECT 
+            p.permission_id, p.name, p.description, 0 AS inherited, p.created, p.last_update
+        FROM
+            permission AS p
+                INNER JOIN
+            role_permission AS rp ON rp.permission_id = p.permission_id
+        WHERE
+            rp.role_id = :id');
 
-        $pdos->bindParam(':id', $roleId, PDO::PARAM_INT);
-        $pdos->execute();
+        $stmt->bindParam(':id', $roleId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        return array_combine(array_column($array, 'id'), $array);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -133,21 +207,32 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchByRoleName(string $roleName): array
     {
-        $pdos = $this->pdo->prepare('
-        SELECT p.permission_id AS id, p.name, p.description, p.created, p.last_update AS lastUpdate
-        FROM permission AS p
-        INNER JOIN role_permission AS rp
-        INNER JOIN role as r
-        ON rp.permission_id = p.permission_id
-        AND rp.role_id = r.role_id
-        WHERE r.name = :name');
+        //make query
+        $stmt = $this->pdo->prepare('
+        SELECT 
+            p.permission_id, p.name, p.description, 0 AS inherited, p.created, p.last_update
+        FROM
+            permission AS p
+                INNER JOIN
+            role_permission AS rp
+                INNER JOIN
+            role AS r ON rp.permission_id = p.permission_id
+                AND rp.role_id = r.role_id
+        WHERE
+            r.name = :name');
 
-        $pdos->bindParam(':name', $roleName, PDO::PARAM_STR);
-        $pdos->execute();
+        $stmt->bindParam(':name', $roleName, PDO::PARAM_STR);
+        $stmt->execute();
 
-        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        return array_combine(array_column($array, 'id'), $array);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -163,31 +248,44 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchByUserId(int|string $userId): array
     {
-        $pdos = $this->pdo->prepare('
-        (SELECT p.permission_id AS id, p.name, p.description, 
-        0 AS inherited, p.created, p.last_update AS lastUpdate
-        FROM permission AS p
-        INNER JOIN user_permission AS up
-        ON p.permission_id = up.permission_id
-        WHERE up.user_id = :id)
-        UNION
-        (SELECT p.permission_id AS id, p.name, p.description, 
-        r.role_id AS inherited, p.created, p.last_update AS lastUpdate
-        FROM permission AS p
-        INNER JOIN role_permission as rp
-        INNER JOIN role AS r
-        INNER JOIN user_role AS ur
-        ON p.permission_id = rp.permission_id
-        AND rp.role_id = r.role_id
-        AND r.role_id = ur.role_id
-        WHERE ur.user_id = :id)');
+        //make query
+        $stmt = $this->pdo->prepare('
+        (SELECT 
+            p.permission_id, p.name, p.description, 0 AS inherited, p.created, p.last_update
+        FROM
+            permission AS p
+                INNER JOIN
+            user_permission AS up ON p.permission_id = up.permission_id
+        WHERE
+            up.user_id = :id) 
+        UNION 
+        (SELECT 
+            p.permission_id, p.name, p.description, r.role_id AS inherited, p.created, p.last_update
+        FROM
+            permission AS p
+                INNER JOIN
+            role_permission AS rp
+                INNER JOIN
+            role AS r
+                INNER JOIN
+            user_role AS ur ON p.permission_id = rp.permission_id
+                AND rp.role_id = r.role_id
+                AND r.role_id = ur.role_id
+        WHERE
+            ur.user_id = :id)');
 
-        $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
-        $pdos->execute();
+        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        return array_combine(array_column($array, 'id'), $array);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -195,33 +293,50 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchByUserName(string $userName): array
     {
-        $pdos = $this->pdo->prepare('
-        (SELECT p.permission_id AS id, p.name, p.description, 0 AS inherited, p.created, p.last_update AS lastUpdate
-        FROM permission AS p
-        INNER JOIN user_permission AS up
-        INNER JOIN user AS u
-        ON p.permission_id = up.permission_id
-        AND up.user_id = u.user_id
-        WHERE u.name = :name)
+        //make query
+        $stmt = $this->pdo->prepare('
+        (SELECT 
+            p.permission_id, p.name, p.description, 0 AS inherited, p.created, p.last_update
+        FROM
+            permission AS p
+                INNER JOIN
+            user_permission AS up
+                INNER JOIN
+            user AS u ON p.permission_id = up.permission_id
+                AND up.user_id = u.user_id
+        WHERE
+            u.name = :name)    
         UNION
-        (SELECT p.permission_id AS id, p.name, p.description, r.role_id AS inherited, p.created, p.last_update AS lastUpdate
-        FROM permission AS p
-        INNER JOIN role_permission as rp
-        INNER JOIN role AS r
-        INNER JOIN user_role AS ur
-        INNER JOIN user AS u
-        ON p.permission_id = rp.permission_id
-        AND rp.role_id = r.role_id
-        AND r.role_id = ur.role_id
-        AND ur.user_id = u.user_id
-        WHERE u.name = :name)');
+        (SELECT 
+            p.permission_id, p.name, p.description, r.role_id AS inherited, p.created, p.last_update
+        FROM
+            permission AS p
+                INNER JOIN
+            role_permission AS rp
+                INNER JOIN
+            role AS r
+                INNER JOIN
+            user_role AS ur
+                INNER JOIN
+            user AS u ON p.permission_id = rp.permission_id
+                AND rp.role_id = r.role_id
+                AND r.role_id = ur.role_id
+                AND ur.user_id = u.user_id
+        WHERE
+            u.name = :name)');
 
-        $pdos->bindParam(':name', $userName, PDO::PARAM_STR);
-        $pdos->execute();
+        $stmt->bindParam(':name', $userName, PDO::PARAM_STR);
+        $stmt->execute();
 
-        $array = $pdos->fetchAll(PDO::FETCH_CLASS, Permission::class);
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
 
-        return array_combine(array_column($array, 'id'), $array);
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return self::hydrator($result);
     }
 
     /**
@@ -229,26 +344,45 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchUserPermissionHashTable(int $userId): array
     {
-        $pdos = $this->pdo->prepare('(SELECT sha2(concat(u.user_id, ".", up.permission_id),0) as p_hash
-        FROM user AS u
-        INNER JOIN user_permission AS up
-        ON u.user_id = up.permission_id WHERE u.user_id = :id)
+        //make query
+        $stmt = $this->pdo->prepare('
+        (SELECT 
+            SHA2(CONCAT(u.user_id, '.', up.permission_id),0) AS p_hash
+        FROM
+            user AS u
+                INNER JOIN
+            user_permission AS up ON u.user_id = up.permission_id
+        WHERE
+            u.user_id = :id)
         UNION
-        (SELECT sha2(concat(u.user_id, ".", rp.permission_id),0) as p_hash
-        FROM user AS u
-        INNER JOIN user_role AS ur
-        INNER JOIN role AS r
-        INNER JOIN role_permission as rp
-        ON u.user_id = ur.user_id
-        AND ur.role_id = r.role_id
-        AND r.role_id = rp.role_id 
-        WHERE u.user_id = :id)
+        (SELECT 
+            SHA2(CONCAT(u.user_id, '.', rp.permission_id),0) AS p_hash
+        FROM
+            user AS u
+                INNER JOIN
+            user_role AS ur
+                INNER JOIN
+            role AS r
+                INNER JOIN
+            role_permission AS rp ON u.user_id = ur.user_id
+                AND ur.role_id = r.role_id
+                AND r.role_id = rp.role_id
+        WHERE
+            u.user_id = 1) 
         ORDER BY p_hash');
 
-        $pdos->bindParam(':id', $userId, PDO::PARAM_INT);
-        $pdos->execute();
+        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return array_flip($pdos->fetchAll(PDO::FETCH_COLUMN));
+        $result = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return array_flip($result);
     }
 
     /**
@@ -256,12 +390,13 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function permissionExistById(int|string $permissionId): bool
     {
-        $pdos = $this->pdo->prepare('SELECT permission_id FROM permission WHERE permission_id = :id');
+        //make query
+        $stmt = $this->pdo->prepare('SELECT permission_id FROM permission WHERE permission_id = :id');
 
-        $pdos->bindParam(':id', $permissionId, PDO::PARAM_INT);
-        $pdos->execute();
+        $stmt->bindParam(':id', $permissionId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return ($pdos->rowCount() > 0) ? true : false;
+        return ($stmt->rowCount() > 0) ? true : false;
     }
 
     /**
@@ -269,12 +404,13 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function permissionExistByName(string $permissionName): bool
     {
-        $pdos = $this->pdo->prepare('SELECT permission_id FROM permission WHERE name = :name');
+        //make query
+        $stmt = $this->pdo->prepare('SELECT permission_id FROM permission WHERE name = :name');
 
-        $pdos->bindParam(':name', $permissionName, PDO::PARAM_STR);
-        $pdos->execute();
+        $stmt->bindParam(':name', $permissionName, PDO::PARAM_STR);
+        $stmt->execute();
 
-        return ($pdos->rowCount() > 0) ? true : false;
+        return ($stmt->rowCount() > 0) ? true : false;
     }
 
     /**
@@ -290,14 +426,22 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     protected function concreteInsert(DomainObjectInterface &$permission): void
     {
-        $this->checkDomainObjectType($permission);
+        \assert($permission instanceof Permission, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
+
+        //get value to be passed as reference
+        $created = $permission->created->format(DATE_ATOM);
+        $lastUpdate = $permission->lastUpdate->format(DATE_ATOM);
 
         try {
-            $pdos = $this->pdo->prepare('INSERT INTO permission (name, description) VALUES (:name, :description)');
+            //make query
+            $stmt = $this->pdo->prepare('INSERT INTO permission (name, description, created, last_update) VALUES (:name, :description, :created, :last_update )');
 
-            $pdos->bindParam(':name', $permission->name, PDO::PARAM_STR);
-            $pdos->bindParam(':description', $permission->description, PDO::PARAM_STR);
-            $pdos->execute();
+            $stmt->bindParam(':name', $permission->name, PDO::PARAM_STR);
+            $stmt->bindParam(':description', $permission->description, PDO::PARAM_STR);
+            $stmt->bindParam(':created', $created, PDO::PARAM_STR);
+            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
+
+            $stmt->execute();
 
             $permission->setId((int) $this->pdo->lastInsertId());
         } catch (RuntimeException $e) {
@@ -310,17 +454,22 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     protected function concreteUpdate(DomainObjectInterface $permission): void
     {
-        $this->checkDomainObjectType($permission);
+        \assert($permission instanceof Permission, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
 
+        //get value to be passed as reference
         $objId = $permission->getId();
+        $lastUpdate = $permission->lastUpdate->format(DATE_ATOM);
 
         try {
-            $pdos = $this->pdo->prepare('UPDATE permission SET name = :name, description = :description WHERE (permission_id = :id)');
+            //make query
+            $stmt = $this->pdo->prepare('UPDATE permission SET name = :name, description = :description, last_update = :last_update WHERE (permission_id = :id)');
 
-            $pdos->bindParam(':id', $objId, PDO::PARAM_INT);
-            $pdos->bindParam(':name', $permission->name, PDO::PARAM_STR);
-            $pdos->bindParam(':description', $permission->description, PDO::PARAM_STR);
-            $pdos->execute();
+            $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
+            $stmt->bindParam(':name', $permission->name, PDO::PARAM_STR);
+            $stmt->bindParam(':description', $permission->description, PDO::PARAM_STR);
+            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
+
+            $stmt->execute();
         } catch (RuntimeException $e) {
             echo 'Update not compled, ', $e->getMessage(), "\n";
         }
@@ -331,29 +480,20 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     protected function concreteDelete(DomainObjectInterface &$permission): void
     {
-        $this->checkDomainObjectType($permission);
+        \assert($permission instanceof Permission, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
 
+        //get value to be passed as reference
         $objId = $permission->getId();
 
         try {
-            $pdos = $this->pdo->prepare('DELETE FROM permission WHERE permission_id = :id');
+            $stmt = $this->pdo->prepare('DELETE FROM permission WHERE permission_id = :id');
 
-            $pdos->bindParam(':id', $objId, PDO::PARAM_INT);
-            $pdos->execute();
+            $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
+            $stmt->execute();
 
-            $permission = new NullDomainObject();
+            $user = new NullDomainObject();
         } catch (RuntimeException $e) {
             echo 'Delete not compled, ', $e->getMessage(), "\n";
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function checkDomainObjectType(DomainObjectInterface $domainObject): void
-    {
-        if (!($domainObject instanceof Permission)) {
-            throw new InvalidArgumentException('Domain Object parameter must be instance of Permission class');
         }
     }
 }

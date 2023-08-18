@@ -20,6 +20,7 @@ use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
 use RuntimeException;
+use stdClass;
 
 /**
  * UserMapper.
