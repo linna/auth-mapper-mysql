@@ -26,7 +26,7 @@
         "infection/infection": ">=0.26",
         "phpstan/phpstan": ">=1.8",
         "phpunit/phpunit": ">=9.0",
-        "linna/framework": "^0.27.0",
+        "linna/framework": "dev-data-mapper",
         "linna/db-dumps": "dev-master",
         "linna/auth-mapper-test-trait": "^0.2"
     },

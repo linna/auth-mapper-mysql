@@ -57,7 +57,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      *
      * @return array<int, User>
      */
-    private static function hydrator(array $array): array
+    private function hydrator(array $array): array
     {
         $tmp = [];
 

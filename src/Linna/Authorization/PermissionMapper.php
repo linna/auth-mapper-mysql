@@ -18,7 +18,6 @@ use Linna\DataMapper\MapperAbstract;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
-use PDOException;
 use RuntimeException;
 use stdClass;
 
@@ -49,7 +48,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      *
      * @return array<int, EnhancedUser>
      */
-    private static function hydrator(array $array): array
+    private function hydrator(array $array): array
     {
         $tmp = [];
 
@@ -486,12 +485,13 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         $objId = $permission->getId();
 
         try {
+            //make query
             $stmt = $this->pdo->prepare('DELETE FROM permission WHERE permission_id = :id');
 
             $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
             $stmt->execute();
 
-            $user = new NullDomainObject();
+            $permission = new NullDomainObject();
         } catch (RuntimeException $e) {
             echo 'Delete not compled, ', $e->getMessage(), "\n";
         }

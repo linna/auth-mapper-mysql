@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Linna\Authorization;
 
 use DateTimeImmutable;
-//use InvalidArgumentException;
+use InvalidArgumentException;
 use Linna\Authentication\Password;
 use Linna\Authentication\User;
 use Linna\Authentication\UserMapper;
@@ -29,6 +29,10 @@ use stdClass;
  */
 class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterface
 {
+    public const FETCH_VOID = 4096;
+
+    public const FETCH_WHOLE = 2048;
+
     private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of EnhancedUser class';
 
     /**
@@ -37,7 +41,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      * @param ExtendedPDO               $pdo              Valid <code>PDO</code> instace to interact with the persistent storage.
      * @param Password                  $password         <code>Password</code> instance to manage passwords.
      * @param PermissionMapperInterface $permissionMapper Permission mapper.
-     * @param RoleToUserMapperInterface $roleToUserMapper Role to user mapper.
+     * @param RoleMapperInterface       $roleMapper       Role mapper.
      */
     public function __construct(
         //pdo for parent class
@@ -49,10 +53,24 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         /** @var PermissionMapperInterface Permission Mapper */
         protected PermissionMapperInterface $permissionMapper,
 
-        /** @var RoleToUserMapperInterface Role to user Mapper */
-        protected RoleToUserMapperInterface $roleToUserMapper
+        /** @var RoleMapperInterface Role to user Mapper */
+        protected RoleMapperInterface $roleMapper,
+
+        /** @var int Avoid to fetch permission and users for a role, permit to exclude RoleToUserMapper.*/
+        private int $fetchMode = self::FETCH_WHOLE
     ) {
         parent::__construct(pdo: $pdo, passwordUtility: $password);
+    }
+
+    public function setFetchMode(int $fetchMode)
+    {
+        //var_dump(0 || ($arg & (~$void & ~$whole)));
+        \assert(
+            self::FETCH_VOID === $fetchMode || self::FETCH_WHOLE === $fetchMode,
+            new InvalidArgumentException("Unknown fetch mode, should be EnhancedUserMapper::FETCH_VOID|EnhancedUserMapper::FETCH_WHOLE")
+        );
+
+        $this->fetchMode = $fetchMode;
     }
 
     /**
@@ -62,14 +80,14 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      *
      * @return array<int, EnhancedUser>
      */
-    private static function hydrator(array $array): array
+    private function hydrator(array $array): array
     {
         $tmp = [];
 
         foreach ($array as $value) {
 
             //get roles and permissions
-            $roles = $value->roleToUserMapper->fetchByUserId($value->user_id);
+            $roles = $value->roleMapper->fetchByUserId($value->user_id);
             $permissions = $value->permissionMapper->fetchByUserId($value->user_id);
 
             $tmp[] = new EnhancedUser(//pass password as argument
@@ -77,7 +95,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
                 id:              $value->user_id,
                 uuid:            $value->uuid,
                 name:            $value->name,
-                description:     $value->session_id,
+                description:     $value->description,
                 email:           $value->email,
                 password:        $value->password,
                 active:          $value->active,
@@ -98,7 +116,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     {
         //make query
         $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE user_id = :id');
-        $stmt->bindParam(':id', $loginAttemptId, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
         $stmt->execute();
 
         //fail fast
@@ -107,7 +125,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         }
 
         //get roles and permissions
-        $roles = $this->roleToUserMapper->fetchByUserId($userId);
+        $roles = $this->roleMapper->fetchByUserId($userId);
         $permissions = $this->permissionMapper->fetchByUserId($userId);
 
         //return result
@@ -116,7 +134,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
             id:              $stdClass->user_id,
             uuid:            $stdClass->uuid,
             name:            $stdClass->name,
-            description:     $stdClass->session_id,
+            description:     $stdClass->description,
             email:           $stdClass->email,
             password:        $stdClass->password,
             active:          $stdClass->active,
@@ -316,44 +334,6 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         //return result
         return self::hydrator($result);
     }
-
-    /**
-     * EnhancedUser Compositor.
-     * Build users array creating every instance for users retrived from
-     * persistent storage.
-     *
-     * @param PDOStatement $pdos
-     *
-     * @return array
-     */
-    /*protected function EnhancedUserCompositor(PDOStatement &$pdos): array
-    {
-        $users = [];
-
-        while (($user = $pdos->fetch(PDO::FETCH_OBJ)) !== false) {
-            $userId = (int) $user->id;
-
-            $tmp = new EnhancedUser(
-                $this->password,
-                $this->roleToUserMapper->fetchByUserId($userId),
-                $this->permissionMapper->fetchByUserId($userId)
-            );
-
-            $tmp->setId($userId);
-            $tmp->uuid = $user->uuid;
-            $tmp->name = $user->name;
-            $tmp->description = $user->description;
-            $tmp->email = $user->email;
-            $tmp->password = $user->password;
-            $tmp->active = (int) $user->active;
-            $tmp->created = $user->created;
-            $tmp->lastUpdate = $user->lastUpdate;
-
-            $users[$userId] = clone $tmp;
-        }
-
-        return $users;
-    }*/
 
     /**
      * {@inheritdoc}
