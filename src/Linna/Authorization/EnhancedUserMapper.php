@@ -42,6 +42,10 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
      * @param Password                  $password         <code>Password</code> instance to manage passwords.
      * @param PermissionMapperInterface $permissionMapper Permission mapper.
      * @param RoleMapperInterface       $roleMapper       Role mapper.
+     * @param int                       $fetchMode        If set to FETCH_WHOLE, the <code>EnhancedUser</code> object
+     *                                                    contains also an array of <code>Role</code> and <code>Permission</code> object,
+     *                                                    if set to FETCH_VOID , the <code>EnhancedUser</code> object contains a void array
+     *                                                    for permissions and roles.
      */
     public function __construct(
         //pdo for parent class
@@ -56,7 +60,7 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
         /** @var RoleMapperInterface Role to user Mapper */
         protected RoleMapperInterface $roleMapper,
 
-        /** @var int Avoid to fetch permission and users for a role, permit to exclude RoleToUserMapper.*/
+        /** @var int Avoid to fetch permission and roles for a user.*/
         private int $fetchMode = self::FETCH_WHOLE
     ) {
         parent::__construct(pdo: $pdo, passwordUtility: $password);
@@ -84,14 +88,43 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
     {
         $tmp = [];
 
+        // return user with roles and permissions
+        if ($this->fetchMode === self::FETCH_WHOLE) {
+
+            $this->roleMapper->setFetchMode(RoleMapper::FETCH_VOID);
+
+            foreach ($array as $value) {
+
+                //get roles and permissions
+                $roles = $this->roleMapper->fetchByUserId($value->user_id);
+                $permissions = $this->permissionMapper->fetchByUserId($value->user_id);
+
+                $tmp[] = new EnhancedUser(//pass password as argument
+                    passwordUtility: parent::$password, // from parent user mapper
+                    id:              $value->user_id,
+                    uuid:            $value->uuid,
+                    name:            $value->name,
+                    description:     $value->description,
+                    email:           $value->email,
+                    password:        $value->password,
+                    active:          $value->active,
+                    created:         new DateTimeImmutable($value->created),
+                    lastUpdate:      new DateTimeImmutable($value->last_update),
+                    roles:           $roles,
+                    permissions:     $permissions
+                );
+            }
+
+            $this->roleMapper->setFetchMode(RoleMapper::FETCH_WHOLE);
+
+            return $tmp;
+        }
+
+        // return only the user
         foreach ($array as $value) {
 
-            //get roles and permissions
-            $roles = $value->roleMapper->fetchByUserId($value->user_id);
-            $permissions = $value->permissionMapper->fetchByUserId($value->user_id);
-
-            $tmp[] = new EnhancedUser(//pass password as argument
-                passwordUtility: parent::$password, // from parent user mapper
+            $tmp[] = new EnhancedUser(
+                passwordUtility: parent::$password,
                 id:              $value->user_id,
                 uuid:            $value->uuid,
                 name:            $value->name,
@@ -101,8 +134,6 @@ class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterfa
                 active:          $value->active,
                 created:         new DateTimeImmutable($value->created),
                 lastUpdate:      new DateTimeImmutable($value->last_update),
-                roles:           $roles,
-                permissions:     $permissions
             );
         }
 

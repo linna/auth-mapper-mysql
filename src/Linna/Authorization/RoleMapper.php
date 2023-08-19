@@ -20,7 +20,6 @@ use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
 use PDOException;
-use PDOStatement;
 use RuntimeException;
 use stdClass;
 
@@ -40,10 +39,13 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     /**
      * Constructor.
      *
-     * @param ExtendedPDO               $pdo
-     * @param PermissionMapperInterface $permissionMapper
-     * @param UserMapperInterface       $userMapper
-     * @param RoleToUserMapperInterface $roleToUserMapper
+     * @param ExtendedPDO                 $pdo              Valid <code>PDO</code> instace to interact with the persistent storage.
+     * @param PermissionMapperInterface   $permissionMapper Permission mapper.
+     * @param EnhancedUserMapperInterface $userMapper       User Mapper
+     * @param int                         $fetchMode        If set to FETCH_WHOLE, the <code>EnhancedUser</code> object
+     *                                                      contains also an array of <code>Role</code> and <code>Permission</code> object,
+     *                                                      if set to FETCH_VOID , the <code>EnhancedUser</code> object contains a void array
+     *                                                      for permissions and roles.
      */
     public function __construct(
         /** @var ExtendedPDO Database Connection. */
@@ -52,10 +54,10 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         /** @var PermissionMapperInterface Permission Mapper. */
         protected PermissionMapperInterface $permissionMapper,
 
-        /** @var UserMapperInterface Permission Mapper. */
-        protected UserMapperInterface $userMapper,
+        /** @var EnhancedUserMapperInterface Enhanced User Mapper. */
+        protected EnhancedUserMapperInterface $userMapper,
 
-        /** @var int Avoid to fetch permission and users for a role, permit to exclude RoleToUserMapper.*/
+        /** @var int Avoid to fetch permission and users for a role.*/
         private int $fetchMode = RoleMapper::FETCH_WHOLE
     ) {
         /*$this->pdo = $pdo;
@@ -86,12 +88,36 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
     {
         $tmp = [];
 
+        // return role with users and permissions
+        if ($this->fetchMode === self::FETCH_WHOLE) {
+
+            $this->userMapper->setFetchMode(EnhancedUserMapper::FETCH_VOID);
+
+            foreach ($array as $value) {
+
+                //get users and permissions
+                $users = $this->userMapper->fetchByRoleId($value->roleId);
+                $permissions = $this->permissionMapper->fetchByRoleId($value->roleId);
+
+                $tmp[] = new Role(
+                    id:              $value->role_id,
+                    name:            $value->name,
+                    description:     $value->description,
+                    active:          $value->active,
+                    created:         new DateTimeImmutable($value->created),
+                    lastUpdate:      new DateTimeImmutable($value->last_update),
+                    users:           $users,
+                    permissions:     $permissions
+                );
+            }
+
+            $this->userMapper->setFetchMode(EnhancedUserMapper::FETCH_WHOLE);
+
+            return $tmp;
+        }
+
+        // return only the role
         foreach ($array as $value) {
-
-            //get users and permissions
-            $users = $this->userMapper->fetchByRoleId($value->roleId);
-            $permissions = $this->permissionMapper->fetchByRoleId($value->roleId);
-
             $tmp[] = new Role(
                 id:              $value->role_id,
                 name:            $value->name,
@@ -99,11 +125,8 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
                 active:          $value->active,
                 created:         new DateTimeImmutable($value->created),
                 lastUpdate:      new DateTimeImmutable($value->last_update),
-                users:           $users,
-                permissions:     $permissions
             );
         }
-
         return $tmp;
     }
 

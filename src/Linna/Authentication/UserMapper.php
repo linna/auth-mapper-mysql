@@ -61,11 +61,9 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
     {
         $tmp = [];
 
-        $password = new Password();
-
         foreach ($array as $value) {
-            $tmp[] = new User(//pass password as argument
-                passwordUtility: self::$password, // from the mapper
+            $tmp[] = new User(
+                passwordUtility: self::$password,
                 id:              $value->user_id,
                 uuid:            $value->uuid,
                 name:            $value->name,
