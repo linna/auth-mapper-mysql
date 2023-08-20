@@ -14,6 +14,7 @@ namespace Linna\Authentication;
 use Linna\Storage\StorageFactory;
 use PDO;
 use PHPUnit\Framework\TestCase;
+use DateTimeImmutable;
 
 /**
  * Enhanced Authentication Mapper Test.
@@ -49,8 +50,9 @@ class EnhancedAuthenticationMapperTest extends TestCase
         self::$pdo = $pdo;
         self::$enhancedAuthenticationMapper = new EnhancedAuthenticationMapper($pdo);
 
-
+        self::$pdo->exec('DELETE FROM login_attempt');
         self::$pdo->exec('ALTER TABLE login_attempt AUTO_INCREMENT = 0');
+        //self::$pdo->exec('ALTER TABLE login_attempt AUTO_INCREMENT = 0');
 
         //populate data base
         self::createFakeData();
@@ -97,11 +99,11 @@ class EnhancedAuthenticationMapperTest extends TestCase
         $timeSliding = 0;
 
         foreach ($loginAttempt as $data) {
-            $loginAttempt = self::$enhancedAuthenticationMapper->create();
-            $loginAttempt->userName = $data[0];
-            $loginAttempt->sessionId = $data[1];
-            $loginAttempt->ipAddress = $data[2];
-            $loginAttempt->when = date('YmdHis', ((time() - 28) +  $timeSliding++));
+            $loginAttempt = new LoginAttempt(
+                userName: $data[0],
+                sessionId: $data[1],
+                ipAddress: $data[2]
+            );
 
             self::$enhancedAuthenticationMapper->save($loginAttempt);
         }
@@ -112,8 +114,9 @@ class EnhancedAuthenticationMapperTest extends TestCase
      *
      * @return void
      */
-    public static function tearDownAfterClass(): void
+    /*public static function tearDownAfterClass(): void
     {
-        self::$pdo->exec('DELETE FROM login_attempt');
-    }
+        //self::$pdo->exec('DELETE FROM login_attempt');
+        //self::$pdo->exec('ALTER TABLE login_attempt AUTO_INCREMENT = 0');
+    }*/
 }

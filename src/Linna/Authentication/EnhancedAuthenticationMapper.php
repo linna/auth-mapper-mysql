@@ -293,8 +293,6 @@ class EnhancedAuthenticationMapper extends MapperAbstract implements EnhancedAut
      */
     protected function concreteUpdate(DomainObjectInterface $loginAttempt): void
     {
-        //\assert($loginAttempt instanceof LoginAttempt, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
-
         throw new RuntimeException('LoginAttempt class instance does not implement updates');
     }
 
