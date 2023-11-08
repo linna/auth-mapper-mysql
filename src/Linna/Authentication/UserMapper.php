@@ -67,7 +67,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
                 id:              $value->user_id,
                 uuid:            $value->uuid,
                 name:            $value->name,
-                description:     $value->session_id,
+                description:     $value->description,
                 email:           $value->email,
                 password:        $value->password,
                 active:          $value->active,
@@ -104,7 +104,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
             id:              $stdClass->user_id,
             uuid:            $stdClass->uuid,
             name:            $stdClass->name,
-            description:     $stdClass->session_id,
+            description:     $stdClass->description,
             email:           $stdClass->email,
             password:        $stdClass->password,
             active:          $stdClass->active,
@@ -141,7 +141,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
             id:              $stdClass->user_id,
             uuid:            $stdClass->uuid,
             name:            $stdClass->name,
-            description:     $stdClass->session_id,
+            description:     $stdClass->description,
             email:           $stdClass->email,
             password:        $stdClass->password,
             active:          $stdClass->active,
@@ -206,7 +206,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      */
     protected function concreteCreate(): DomainObjectInterface
     {
-        return new User(passwordUtility: $this->password);
+        return new User(passwordUtility: self::$password);
     }
 
     /**

@@ -55,9 +55,9 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         foreach ($array as $value) {
 
             $tmp[] = new Permission(
-                id:              $value->user_id,
+                id:              $value->permission_id,
                 name:            $value->name,
-                description:     $value->session_id,
+                description:     $value->description,
                 inherited:       $value->inherited,
                 created:         new DateTimeImmutable($value->created),
                 lastUpdate:      new DateTimeImmutable($value->last_update),
@@ -73,8 +73,8 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     public function fetchById(int|string $permissionId): DomainObjectInterface
     {
         //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE user_id = :id');
-        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE permission_id = :id');
+        $stmt->bindParam(':id', $permissionId, PDO::PARAM_INT);
         $stmt->execute();
 
         //fail fast
@@ -83,9 +83,9 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         }
 
         return new Permission(
-            id:              $stdClass->user_id,
+            id:              $stdClass->permission_id,
             name:            $stdClass->name,
-            description:     $stdClass->session_id,
+            description:     $stdClass->description,
             inherited:       $stdClass->inherited,
             created:         new DateTimeImmutable($stdClass->created),
             lastUpdate:      new DateTimeImmutable($stdClass->last_update),
@@ -97,12 +97,12 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      */
     public function fetchByName(string $permissionName): DomainObjectInterface
     {
-        //handle user name
-        $hashedUserName = md5($permissionName);
+        //handle permission name
+        $hashedPermissionName = md5($permissionName);
 
         //make query
         $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE md5(name) = :name');
-        $stmt->bindParam(':name', $hashedUserName, PDO::PARAM_STR);
+        $stmt->bindParam(':name', $hashedPermissionName, PDO::PARAM_STR);
         $stmt->execute();
 
         //fail fast
@@ -112,9 +112,9 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
 
         //return result
         return new Permission(
-            id:              $stdClass->user_id,
+            id:              $stdClass->permission_id,
             name:            $stdClass->name,
-            description:     $stdClass->session_id,
+            description:     $stdClass->description,
             inherited:       $stdClass->inherited,
             created:         new DateTimeImmutable($stdClass->created),
             lastUpdate:      new DateTimeImmutable($stdClass->last_update),

@@ -13,7 +13,7 @@ namespace Linna\Authorization;
 
 use InvalidArgumentException;
 use DateTimeImmutable;
-use Linna\Authentication\UserMapperInterface;
+//use Linna\Authentication\UserMapperInterface;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\MapperAbstract;
 use Linna\DataMapper\NullDomainObject;
@@ -52,19 +52,21 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         protected ExtendedPDO $pdo,
 
         /** @var PermissionMapperInterface Permission Mapper. */
-        protected PermissionMapperInterface $permissionMapper,
+        protected ?PermissionMapperInterface $permissionMapper,
 
         /** @var EnhancedUserMapperInterface Enhanced User Mapper. */
-        protected EnhancedUserMapperInterface $userMapper,
+        protected ?EnhancedUserMapperInterface $userMapper,
 
         /** @var int Avoid to fetch permission and users for a role.*/
         private int $fetchMode = RoleMapper::FETCH_WHOLE
     ) {
-        /*$this->pdo = $pdo;
-        $this->permissionMapper = $permissionMapper;
-        $this->userMapper = $userMapper;
-        $this->roleToUserMapper = $roleToUserMapper;*/
+        \assert(
+            RoleMapper::FETCH_WHOLE === $fetchMode && $userMapper instanceof EnhancedUserMapperInterface && $permissionMapper instanceof PermissionMapperInterface,
+            new InvalidArgumentException("RoleMapper::FETCH_WHOLE require a PermissionMapper and EnhancedUserMapper as arguments")
+        );
     }
+
+    //split role mapper in RoleMapper and EnhancedRoleMapper to avoid conflicts
 
     public function setFetchMode(int $fetchMode)
     {

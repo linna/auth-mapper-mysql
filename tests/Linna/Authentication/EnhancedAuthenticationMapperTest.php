@@ -96,15 +96,19 @@ class EnhancedAuthenticationMapperTest extends TestCase
             ['fooroot', '3hto06tko273jjc1se0v1aqvvn', '192.168.1.3'],
         ];
 
-        $timeSliding = 0;
+        $timeSliding = count($loginAttempt);
 
         foreach ($loginAttempt as $data) {
             $loginAttempt = new LoginAttempt(
                 userName: $data[0],
                 sessionId: $data[1],
-                ipAddress: $data[2]
+                ipAddress: $data[2],
+                when: new DateTimeImmutable("-{$timeSliding} seconds"),
+                created: new DateTimeImmutable("-{$timeSliding} seconds"),
+                lastUpdate: new DateTimeImmutable("-{$timeSliding} seconds")
             );
 
+            $timeSliding--;
             self::$enhancedAuthenticationMapper->save($loginAttempt);
         }
     }
