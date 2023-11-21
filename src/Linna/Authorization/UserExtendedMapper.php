@@ -25,9 +25,9 @@ use PDOException;
 use stdClass;
 
 /**
- * EnhancedUserMapper.
+ * UserExtendedMapper.
  */
-class EnhancedUserMapper extends UserMapper implements EnhancedUserMapperInterface
+class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterface
 {
     public const FETCH_VOID = 4096;
 

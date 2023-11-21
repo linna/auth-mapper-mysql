@@ -96,7 +96,7 @@ class EnhancedAuthenticationMapperTest extends TestCase
             ['fooroot', '3hto06tko273jjc1se0v1aqvvn', '192.168.1.3'],
         ];
 
-        $timeSliding = count($loginAttempt);
+        $timeSliding = \count($loginAttempt);
 
         foreach ($loginAttempt as $data) {
             $loginAttempt = new LoginAttempt(

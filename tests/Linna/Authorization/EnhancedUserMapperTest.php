@@ -49,7 +49,7 @@ class EnhancedUserMapperTest extends TestCase
         $permissionMapper = new PermissionMapper($pdo);
         //$userMapper = new UserMapper($pdo, $password);
         $roleMapper = new RoleMapper($pdo, null, null, RoleMapper::FETCH_VOID);
-        
+
         self::$pdo = $pdo;
         self::$permissionMapper = $permissionMapper;
         self::$roleMapper = $roleMapper;
