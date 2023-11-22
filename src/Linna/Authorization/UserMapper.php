@@ -9,10 +9,11 @@
  */
 declare(strict_types=1);
 
-namespace Linna\Authentication;
+namespace Linna\Authorization;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Linna\Authentication\Password;
 use Linna\DataMapper\DomainObjectAbstract;
 use Linna\DataMapper\DomainObjectInterface;
 use Linna\DataMapper\MapperAbstract;
@@ -57,7 +58,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
      *
      * @return array<int, User>
      */
-    private function hydrator(array $array): array
+    protected function hydrator(array $array): array
     {
         $tmp = [];
 
@@ -80,6 +81,29 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
     }
 
     /**
+     * Hydrate an object.
+     *
+     * @param object $object The object containing the resultset from database.
+     *
+     * @return DomainObjectInterface
+     */
+    protected function hydratorSingle(object $object): DomainObjectInterface
+    {
+        return new User(
+            passwordUtility: self::$password,
+            id:              $object->user_id,
+            uuid:            $object->uuid,
+            name:            $object->name,
+            description:     $object->description,
+            email:           $object->email,
+            password:        $object->password,
+            active:          $object->active,
+            created:         new DateTimeImmutable($object->created),
+            lastUpdate:      new DateTimeImmutable($object->last_update)
+        );
+    }
+
+    /**
      * Fetch a user by id.
      *
      * @param int|string $userId
@@ -99,18 +123,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
         }
 
         //return result
-        return new User(
-            passwordUtility: self::$password,
-            id:              $stdClass->user_id,
-            uuid:            $stdClass->uuid,
-            name:            $stdClass->name,
-            description:     $stdClass->description,
-            email:           $stdClass->email,
-            password:        $stdClass->password,
-            active:          $stdClass->active,
-            created:         new DateTimeImmutable($stdClass->created),
-            lastUpdate:      new DateTimeImmutable($stdClass->last_update)
-        );
+        return $this->hydratorSingle($stdClass);
     }
 
     /**
@@ -136,18 +149,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
         }
 
         //return result
-        return new User(
-            passwordUtility: self::$password,
-            id:              $stdClass->user_id,
-            uuid:            $stdClass->uuid,
-            name:            $stdClass->name,
-            description:     $stdClass->description,
-            email:           $stdClass->email,
-            password:        $stdClass->password,
-            active:          $stdClass->active,
-            created:         new DateTimeImmutable($stdClass->created),
-            lastUpdate:      new DateTimeImmutable($stdClass->last_update)
-        );
+        return $this->hydratorSingle($stdClass);
     }
 
     /**
@@ -169,7 +171,7 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -196,7 +198,175 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchByPermission(Permission $permission): array
+    {
+        return $this->fetchByPermissionId($permission->getId());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchByPermissionId(int|string $permissionId): array
+    {
+        //make query
+        $stmt = $this->pdo->prepare('
+        (SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_permission AS up ON u.user_id = up.user_id
+        WHERE
+            up.permission_id = :id) 
+        UNION 
+        (SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_role AS ur ON u.user_id = ur.user_id
+                INNER JOIN
+            role AS r ON ur.role_id = r.role_id
+                INNER JOIN
+            role_permission AS rp ON r.role_id = rp.role_id
+        WHERE
+            rp.permission_id = :id)');
+
+        $stmt->bindParam(':id', $permissionId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return $this->hydrator($result);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchByPermissionName(string $permissionName): array
+    {
+        //make query
+        $stmt = $this->pdo->prepare('
+        (SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_permission AS up ON u.user_id = up.user_id
+                INNER JOIN
+			permission AS p ON up.permission_id = p.permission_id
+        WHERE
+            p.name = :name) 
+        UNION 
+        (SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_role AS ur ON u.user_id = ur.user_id
+                INNER JOIN
+            role AS r ON ur.role_id = r.role_id
+                INNER JOIN
+            role_permission AS rp ON r.role_id = rp.role_id
+                INNER JOIN
+			permission AS p ON rp.permission_id = p.permission_id
+        WHERE
+            p.name = :name)');
+
+        $stmt->bindParam(':name', $permissionName, PDO::PARAM_STR);
+        $stmt->execute();
+
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return $this->hydrator($result);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchByRole(Role $role): array
+    {
+        return $this->fetchByRoleId($role->getId());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchByRoleId(int|string $roleId): array
+    {
+        //make query
+        $stmt = $this->pdo->prepare('
+        SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_role AS ur ON u.user_id = ur.user_id
+        WHERE
+            ur.role_id = :id');
+
+        $stmt->bindParam(':id', $roleId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return $this->hydrator($result);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchByRoleName(string $roleName): array
+    {
+        //make query
+        $stmt = $this->pdo->prepare('
+        SELECT 
+            u.user_id, u.uuid, u.name, u.email, u.description, u.password, u.active, u.created, u.last_update
+        FROM
+            user AS u
+                INNER JOIN
+            user_role AS ur ON u.user_id = ur.user_id 
+                INNER JOIN
+            role AS r ON ur.role_id = r.role_id
+        WHERE
+            r.name = :name');
+
+        $stmt->bindParam(':name', $roleName, PDO::PARAM_STR);
+        $stmt->execute();
+
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
+
+        //fail fast, returns the empty array
+        if (\count($result) === 0) {
+            return $result;
+        }
+
+        //return result
+        return $this->hydrator($result);
     }
 
     /**

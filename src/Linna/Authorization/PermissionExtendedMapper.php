@@ -26,7 +26,7 @@ use stdClass;
  */
 class PermissionExtendedMapper extends PermissionMapper implements PermissionExtendedMapperInterface
 {
-    protected const QUERY_BASE = 'SELECT permission_id, name, description, 0 AS inherited, created, last_update FROM permission';
+    //protected const QUERY_BASE = 'SELECT permission_id, name, description, 0 AS inherited, created, last_update FROM permission';
 
     private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of EnhancedUser class';
 
@@ -37,7 +37,13 @@ class PermissionExtendedMapper extends PermissionMapper implements PermissionExt
      */
     public function __construct(
         /** @var ExtendedPDO Database Connection */
-        protected ExtendedPDO $pdo
+        protected ExtendedPDO $pdo,
+
+        /** @var RoleMapperInterface Permission Mapper. */
+        protected RoleMapperInterface $roleMapper,
+
+        /** @var UserMapperInterface Enhanced User Mapper. */
+        protected UserMapperInterface $userMapper
     ) {
     }
 
@@ -48,19 +54,25 @@ class PermissionExtendedMapper extends PermissionMapper implements PermissionExt
      *
      * @return array<int, EnhancedUser>
      */
-    private function hydrator(array $array): array
+    protected function hydrator(array $array): array
     {
         $tmp = [];
 
         foreach ($array as $value) {
 
-            $tmp[] = new Permission(
+            //get users and roles
+            $users = $this->userMapper->fetchByPermissionId($value->permission_id);
+            $roles = $this->roleMapper->fetchByPermissionId($value->permission_id);
+
+            $tmp[] = new PermissionExtended(
                 id:              $value->permission_id,
                 name:            $value->name,
                 description:     $value->description,
                 inherited:       $value->inherited,
                 created:         new DateTimeImmutable($value->created),
                 lastUpdate:      new DateTimeImmutable($value->last_update),
+                users:           $users,
+                roles:           $roles
             );
         }
 
@@ -68,326 +80,34 @@ class PermissionExtendedMapper extends PermissionMapper implements PermissionExt
     }
 
     /**
-     * {@inheritdoc}
+     * Hydrate an object.
+     *
+     * @param object $object The object containing the resultset from database.
+     *
+     * @return DomainObjectInterface
      */
-    public function fetchById(int|string $permissionId): DomainObjectInterface
+    protected function hydratorSingle(object $object): DomainObjectInterface
     {
-        //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE permission_id = :id');
-        $stmt->bindParam(':id', $permissionId, PDO::PARAM_INT);
-        $stmt->execute();
+        //get users and roles
+        $users = $this->userMapper->fetchByPermissionId($object->permission_id);
+        $roles = $this->roleMapper->fetchByPermissionId($object->permission_id);
 
-        //fail fast
-        if (($stdClass = $stmt->fetchObject()) === false) {
-            return new NullDomainObject();
-        }
-
-        return new Permission(
-            id:              $stdClass->permission_id,
-            name:            $stdClass->name,
-            description:     $stdClass->description,
-            inherited:       $stdClass->inherited,
-            created:         new DateTimeImmutable($stdClass->created),
-            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
+        return new PermissionExtended(
+            id:              $object->permission_id,
+            name:            $object->name,
+            description:     $object->description,
+            inherited:       $object->inherited,
+            created:         new DateTimeImmutable($object->created),
+            lastUpdate:      new DateTimeImmutable($$object->last_update),
+            users:           $users,
+            roles:           $roles
         );
     }
 
     /**
      * {@inheritdoc}
      */
-    public function fetchByName(string $permissionName): DomainObjectInterface
-    {
-        //handle permission name
-        $hashedPermissionName = md5($permissionName);
-
-        //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE md5(name) = :name');
-        $stmt->bindParam(':name', $hashedPermissionName, PDO::PARAM_STR);
-        $stmt->execute();
-
-        //fail fast
-        if (($stdClass = $stmt->fetchObject()) === false) {
-            return new NullDomainObject();
-        }
-
-        //return result
-        return new Permission(
-            id:              $stdClass->permission_id,
-            name:            $stdClass->name,
-            description:     $stdClass->description,
-            inherited:       $stdClass->inherited,
-            created:         new DateTimeImmutable($stdClass->created),
-            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
-        );
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchAll(): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchLimit(int $offset, int $rowCount): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE.' ORDER BY name ASC LIMIT :offset, :rowcount');
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-        $stmt->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByRole(Role $role): array
-    {
-        return $this->fetchByRoleId($role->getId());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByRoleId(int|string $roleId): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare('
-        SELECT 
-            p.permission_id, p.name, p.description, 0 AS inherited, p.created, p.last_update
-        FROM
-            permission AS p
-                INNER JOIN
-            role_permission AS rp ON rp.permission_id = p.permission_id
-        WHERE
-            rp.role_id = :id');
-
-        $stmt->bindParam(':id', $roleId, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByRoleName(string $roleName): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare('
-        SELECT 
-            p.permission_id, p.name, p.description, 0 AS inherited, p.created, p.last_update
-        FROM
-            permission AS p
-                INNER JOIN
-            role_permission AS rp
-                INNER JOIN
-            role AS r ON rp.permission_id = p.permission_id
-                AND rp.role_id = r.role_id
-        WHERE
-            r.name = :name');
-
-        $stmt->bindParam(':name', $roleName, PDO::PARAM_STR);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByUser(EnhancedUser $user): array
-    {
-        return $this->fetchByUserId($user->getId());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByUserId(int|string $userId): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare('
-        (SELECT 
-            p.permission_id, p.name, p.description, 0 AS inherited, p.created, p.last_update
-        FROM
-            permission AS p
-                INNER JOIN
-            user_permission AS up ON p.permission_id = up.permission_id
-        WHERE
-            up.user_id = :id) 
-        UNION 
-        (SELECT 
-            p.permission_id, p.name, p.description, r.role_id AS inherited, p.created, p.last_update
-        FROM
-            permission AS p
-                INNER JOIN
-            role_permission AS rp
-                INNER JOIN
-            role AS r
-                INNER JOIN
-            user_role AS ur ON p.permission_id = rp.permission_id
-                AND rp.role_id = r.role_id
-                AND r.role_id = ur.role_id
-        WHERE
-            ur.user_id = :id)');
-
-        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByUserName(string $userName): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare('
-        (SELECT 
-            p.permission_id, p.name, p.description, 0 AS inherited, p.created, p.last_update
-        FROM
-            permission AS p
-                INNER JOIN
-            user_permission AS up
-                INNER JOIN
-            user AS u ON p.permission_id = up.permission_id
-                AND up.user_id = u.user_id
-        WHERE
-            u.name = :name)    
-        UNION
-        (SELECT 
-            p.permission_id, p.name, p.description, r.role_id AS inherited, p.created, p.last_update
-        FROM
-            permission AS p
-                INNER JOIN
-            role_permission AS rp
-                INNER JOIN
-            role AS r
-                INNER JOIN
-            user_role AS ur
-                INNER JOIN
-            user AS u ON p.permission_id = rp.permission_id
-                AND rp.role_id = r.role_id
-                AND r.role_id = ur.role_id
-                AND ur.user_id = u.user_id
-        WHERE
-            u.name = :name)');
-
-        $stmt->bindParam(':name', $userName, PDO::PARAM_STR);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchUserPermissionHashTable(int $userId): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare('
-        (SELECT 
-            SHA2(CONCAT(u.user_id, '.', up.permission_id),0) AS p_hash
-        FROM
-            user AS u
-                INNER JOIN
-            user_permission AS up ON u.user_id = up.permission_id
-        WHERE
-            u.user_id = :id)
-        UNION
-        (SELECT 
-            SHA2(CONCAT(u.user_id, '.', rp.permission_id),0) AS p_hash
-        FROM
-            user AS u
-                INNER JOIN
-            user_role AS ur
-                INNER JOIN
-            role AS r
-                INNER JOIN
-            role_permission AS rp ON u.user_id = ur.user_id
-                AND ur.role_id = r.role_id
-                AND r.role_id = rp.role_id
-        WHERE
-            u.user_id = 1) 
-        ORDER BY p_hash');
-
-        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return array_flip($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function permissionExistById(int|string $permissionId): bool
+    /*public function permissionExistById(int|string $permissionId): bool
     {
         //make query
         $stmt = $this->pdo->prepare('SELECT permission_id FROM permission WHERE permission_id = :id');
@@ -396,12 +116,12 @@ class PermissionExtendedMapper extends PermissionMapper implements PermissionExt
         $stmt->execute();
 
         return ($stmt->rowCount() > 0) ? true : false;
-    }
+    }*/
 
     /**
      * {@inheritdoc}
      */
-    public function permissionExistByName(string $permissionName): bool
+    /*public function permissionExistByName(string $permissionName): bool
     {
         //make query
         $stmt = $this->pdo->prepare('SELECT permission_id FROM permission WHERE name = :name');
@@ -410,90 +130,13 @@ class PermissionExtendedMapper extends PermissionMapper implements PermissionExt
         $stmt->execute();
 
         return ($stmt->rowCount() > 0) ? true : false;
-    }
+    }*/
 
     /**
      * {@inheritdoc}
      */
     protected function concreteCreate(): DomainObjectInterface
     {
-        return new Permission();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function concreteInsert(DomainObjectInterface &$permission): void
-    {
-        \assert($permission instanceof Permission, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
-
-        //get value to be passed as reference
-        $created = $permission->created->format(DATE_ATOM);
-        $lastUpdate = $permission->lastUpdate->format(DATE_ATOM);
-
-        try {
-            //make query
-            $stmt = $this->pdo->prepare('INSERT INTO permission (name, description, created, last_update) VALUES (:name, :description, :created, :last_update )');
-
-            $stmt->bindParam(':name', $permission->name, PDO::PARAM_STR);
-            $stmt->bindParam(':description', $permission->description, PDO::PARAM_STR);
-            $stmt->bindParam(':created', $created, PDO::PARAM_STR);
-            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
-
-            $stmt->execute();
-
-            $permission->setId((int) $this->pdo->lastInsertId());
-        } catch (RuntimeException $e) {
-            echo 'Insert not compled, ', $e->getMessage(), "\n";
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function concreteUpdate(DomainObjectInterface $permission): void
-    {
-        \assert($permission instanceof Permission, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
-
-        //get value to be passed as reference
-        $objId = $permission->getId();
-        $lastUpdate = $permission->lastUpdate->format(DATE_ATOM);
-
-        try {
-            //make query
-            $stmt = $this->pdo->prepare('UPDATE permission SET name = :name, description = :description, last_update = :last_update WHERE (permission_id = :id)');
-
-            $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
-            $stmt->bindParam(':name', $permission->name, PDO::PARAM_STR);
-            $stmt->bindParam(':description', $permission->description, PDO::PARAM_STR);
-            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
-
-            $stmt->execute();
-        } catch (RuntimeException $e) {
-            echo 'Update not compled, ', $e->getMessage(), "\n";
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function concreteDelete(DomainObjectInterface &$permission): void
-    {
-        \assert($permission instanceof Permission, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
-
-        //get value to be passed as reference
-        $objId = $permission->getId();
-
-        try {
-            //make query
-            $stmt = $this->pdo->prepare('DELETE FROM permission WHERE permission_id = :id');
-
-            $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
-            $stmt->execute();
-
-            $permission = new NullDomainObject();
-        } catch (RuntimeException $e) {
-            echo 'Delete not compled, ', $e->getMessage(), "\n";
-        }
+        return new PermissionExtended();
     }
 }

@@ -48,7 +48,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
      *
      * @return array<int, EnhancedUser>
      */
-    private function hydrator(array $array): array
+    protected function hydrator(array $array): array
     {
         $tmp = [];
 
@@ -68,6 +68,25 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     }
 
     /**
+     * Hydrate an object.
+     *
+     * @param object $object The object containing the resultset from database.
+     *
+     * @return DomainObjectInterface
+     */
+    protected function hydratorSingle(object $object): DomainObjectInterface
+    {
+        return new Permission(
+            id:              $object->permission_id,
+            name:            $object->name,
+            description:     $object->description,
+            inherited:       $object->inherited,
+            created:         new DateTimeImmutable($object->created),
+            lastUpdate:      new DateTimeImmutable($object->last_update),
+        );
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function fetchById(int|string $permissionId): DomainObjectInterface
@@ -82,14 +101,8 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
             return new NullDomainObject();
         }
 
-        return new Permission(
-            id:              $stdClass->permission_id,
-            name:            $stdClass->name,
-            description:     $stdClass->description,
-            inherited:       $stdClass->inherited,
-            created:         new DateTimeImmutable($stdClass->created),
-            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
-        );
+        //return result
+        return $this->hydratorSingle($stdClass);
     }
 
     /**
@@ -111,14 +124,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         }
 
         //return result
-        return new Permission(
-            id:              $stdClass->permission_id,
-            name:            $stdClass->name,
-            description:     $stdClass->description,
-            inherited:       $stdClass->inherited,
-            created:         new DateTimeImmutable($stdClass->created),
-            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
-        );
+        return $this->hydratorSingle($stdClass);
     }
 
     /**
@@ -237,7 +243,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function fetchByUser(EnhancedUser $user): array
+    public function fetchByUser(User $user): array
     {
         return $this->fetchByUserId($user->getId());
     }
@@ -263,13 +269,11 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         FROM
             permission AS p
                 INNER JOIN
-            role_permission AS rp
+            role_permission AS rp ON p.permission_id = rp.permission_id
                 INNER JOIN
-            role AS r
+            role AS r ON rp.role_id = r.role_id
                 INNER JOIN
-            user_role AS ur ON p.permission_id = rp.permission_id
-                AND rp.role_id = r.role_id
-                AND r.role_id = ur.role_id
+            user_role AS ur ON r.role_id = ur.role_id
         WHERE
             ur.user_id = :id)');
 
@@ -299,28 +303,24 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         FROM
             permission AS p
                 INNER JOIN
-            user_permission AS up
+            user_permission AS up ON p.permission_id = up.permission_id
                 INNER JOIN
-            user AS u ON p.permission_id = up.permission_id
-                AND up.user_id = u.user_id
+            user AS u ON up.user_id = u.user_id
         WHERE
-            u.name = :name)    
+            u.name = :name)
         UNION
         (SELECT 
             p.permission_id, p.name, p.description, r.role_id AS inherited, p.created, p.last_update
         FROM
             permission AS p
                 INNER JOIN
-            role_permission AS rp
+            role_permission AS rp ON p.permission_id = rp.permission_id
                 INNER JOIN
-            role AS r
+            role AS r ON rp.role_id = r.role_id
                 INNER JOIN
-            user_role AS ur
+            user_role AS ur ON r.role_id = ur.role_id
                 INNER JOIN
-            user AS u ON p.permission_id = rp.permission_id
-                AND rp.role_id = r.role_id
-                AND r.role_id = ur.role_id
-                AND ur.user_id = u.user_id
+            user AS u ON ur.user_id = u.user_id
         WHERE
             u.name = :name)');
 
@@ -346,7 +346,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         //make query
         $stmt = $this->pdo->prepare('
         (SELECT 
-            SHA2(CONCAT(u.user_id, '.', up.permission_id),0) AS p_hash
+            SHA2(CONCAT(u.user_id, ".", up.permission_id), 0) AS p_hash
         FROM
             user AS u
                 INNER JOIN
@@ -359,15 +359,13 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         FROM
             user AS u
                 INNER JOIN
-            user_role AS ur
+            user_role AS ur ON u.user_id = ur.user_id
                 INNER JOIN
-            role AS r
+            role AS r ON ur.role_id = r.role_id
                 INNER JOIN
-            role_permission AS rp ON u.user_id = ur.user_id
-                AND ur.role_id = r.role_id
-                AND r.role_id = rp.role_id
+            role_permission AS rp ON r.role_id = rp.role_id
         WHERE
-            u.user_id = 1) 
+            u.user_id = :id) 
         ORDER BY p_hash');
 
         $stmt->bindParam(':id', $userId, PDO::PARAM_INT);

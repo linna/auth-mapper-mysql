@@ -13,9 +13,8 @@ namespace Linna\Authorization;
 
 use InvalidArgumentException;
 use DateTimeImmutable;
-//use Linna\Authentication\UserMapperInterface;
+use Linna\Authorization\UserMapperInterface;
 use Linna\DataMapper\DomainObjectInterface;
-use Linna\DataMapper\MapperAbstract;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
@@ -28,55 +27,27 @@ use stdClass;
  */
 class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterface
 {
-    public const FETCH_VOID = 4096;
-
-    public const FETCH_WHOLE = 2048;
-
-    protected const QUERY_BASE = 'SELECT role_id, name, description, active, created, last_update FROM role';
-
-    private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of EnhancedUser class';
-
     /**
      * Constructor.
      *
-     * @param ExtendedPDO                 $pdo              Valid <code>PDO</code> instace to interact with the persistent storage.
-     * @param PermissionMapperInterface   $permissionMapper Permission mapper.
-     * @param EnhancedUserMapperInterface $userMapper       User Mapper
-     * @param int                         $fetchMode        If set to FETCH_WHOLE, the <code>EnhancedUser</code> object
-     *                                                      contains also an array of <code>Role</code> and <code>Permission</code> object,
-     *                                                      if set to FETCH_VOID , the <code>EnhancedUser</code> object contains a void array
-     *                                                      for permissions and roles.
+     * @param ExtendedPDO               $pdo              Valid <code>PDO</code> instace to interact with the persistent storage.
+     * @param PermissionMapperInterface $permissionMapper Permission mapper.
+     * @param UserMapperInterface       $userMapper       User Mapper
+     * @param int                       $fetchMode        If set to FETCH_WHOLE, the <code>EnhancedUser</code> object
+     *                                                    contains also an array of <code>Role</code> and <code>Permission</code> object,
+     *                                                    if set to FETCH_VOID , the <code>EnhancedUser</code> object contains a void array
+     *                                                    for permissions and roles.
      */
     public function __construct(
         /** @var ExtendedPDO Database Connection. */
         protected ExtendedPDO $pdo,
 
         /** @var PermissionMapperInterface Permission Mapper. */
-        protected ?PermissionMapperInterface $permissionMapper,
+        protected PermissionMapperInterface $permissionMapper,
 
-        /** @var EnhancedUserMapperInterface Enhanced User Mapper. */
-        protected ?EnhancedUserMapperInterface $userMapper,
-
-        /** @var int Avoid to fetch permission and users for a role.*/
-        private int $fetchMode = RoleMapper::FETCH_WHOLE
+        /** @var UserMapperInterface Enhanced User Mapper. */
+        protected UserMapperInterface $userMapper
     ) {
-        \assert(
-            RoleMapper::FETCH_WHOLE === $fetchMode && $userMapper instanceof EnhancedUserMapperInterface && $permissionMapper instanceof PermissionMapperInterface,
-            new InvalidArgumentException("RoleMapper::FETCH_WHOLE require a PermissionMapper and EnhancedUserMapper as arguments")
-        );
-    }
-
-    //split role mapper in RoleMapper and EnhancedRoleMapper to avoid conflicts
-
-    public function setFetchMode(int $fetchMode)
-    {
-        //var_dump(0 || ($arg & (~$void & ~$whole)));
-        \assert(
-            RoleMapper::FETCH_VOID === $fetchMode || RoleMapper::FETCH_WHOLE === $fetchMode,
-            new InvalidArgumentException("Unknown fetch mode, should be RoleMapper::FETCH_VOID|RoleMapper::FETCH_WHOLE")
-        );
-
-        $this->fetchMode = $fetchMode;
     }
 
     /**
@@ -86,112 +57,51 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
      *
      * @return array<int, EnhancedUser>
      */
-    private function hydrator(array $array): array
+    protected function hydrator(array $array): array
     {
         $tmp = [];
 
-        // return role with users and permissions
-        if ($this->fetchMode === self::FETCH_WHOLE) {
-
-            $this->userMapper->setFetchMode(EnhancedUserMapper::FETCH_VOID);
-
-            foreach ($array as $value) {
-
-                //get users and permissions
-                $users = $this->userMapper->fetchByRoleId($value->roleId);
-                $permissions = $this->permissionMapper->fetchByRoleId($value->roleId);
-
-                $tmp[] = new Role(
-                    id:              $value->role_id,
-                    name:            $value->name,
-                    description:     $value->description,
-                    active:          $value->active,
-                    created:         new DateTimeImmutable($value->created),
-                    lastUpdate:      new DateTimeImmutable($value->last_update),
-                    users:           $users,
-                    permissions:     $permissions
-                );
-            }
-
-            $this->userMapper->setFetchMode(EnhancedUserMapper::FETCH_WHOLE);
-
-            return $tmp;
-        }
-
-        // return only the role
         foreach ($array as $value) {
-            $tmp[] = new Role(
+
+            //get users and permissions
+            $users = $this->userMapper->fetchByRoleId($value->role_id);
+            $permissions = $this->permissionMapper->fetchByRoleId($value->role_id);
+
+            $tmp[] = new RoleExtended(
                 id:              $value->role_id,
                 name:            $value->name,
                 description:     $value->description,
                 active:          $value->active,
                 created:         new DateTimeImmutable($value->created),
                 lastUpdate:      new DateTimeImmutable($value->last_update),
+                users:           $users,
+                permissions:     $permissions
             );
         }
+
         return $tmp;
     }
 
     /**
-     * {@inheritdoc}
+     * Hydrate an object.
+     *
+     * @param object $object The object containing the resultset from database.
+     *
+     * @return DomainObjectInterface
      */
-    public function fetchById(int|string $roleId): DomainObjectInterface
+    protected function hydratorSingle(object $object): DomainObjectInterface
     {
-        //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE role_id = :id');
-        $stmt->bindParam(':id', $roleId, PDO::PARAM_INT);
-        $stmt->execute();
+        //get users and permissions
+        $users = $this->userMapper->fetchByRoleId($object->role_id);
+        $permissions = $this->permissionMapper->fetchByRoleId($object->role_id);
 
-        //fail fast
-        if (($stdClass = $stmt->fetchObject()) === false) {
-            return new NullDomainObject();
-        }
-
-        //get roles and permissions
-        $users = $this->userMapper->fetchByRoleId($roleId);
-        $permissions = $this->permissionMapper->fetchByRoleId($roleId);
-
-        //return result
-        return new Role(
-            id:              $stdClass->role_id,
-            name:            $stdClass->name,
-            description:     $stdClass->description,
-            active:          $stdClass->active,
-            created:         new DateTimeImmutable($stdClass->created),
-            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
-            users:           $users,
-            permissions:     $permissions
-        );
-    }
-
-    //add fetch by name to role mapper interface in framework
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByName(string $roleName): DomainObjectInterface
-    {
-        //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE name = :name');
-        $stmt->bindParam(':id', $roleId, PDO::PARAM_INT);
-        $stmt->execute();
-
-        //fail fast
-        if (($stdClass = $stmt->fetchObject()) === false) {
-            return new NullDomainObject();
-        }
-
-        //get roles and permissions
-        $users = $this->userMapper->fetchByRoleId($roleId);
-        $permissions = $this->permissionMapper->fetchByRoleId($roleId);
-
-        //return result
-        return new Role(
-            id:              $stdClass->role_id,
-            name:            $stdClass->name,
-            description:     $stdClass->description,
-            active:          $stdClass->active,
-            created:         new DateTimeImmutable($stdClass->created),
-            lastUpdate:      new DateTimeImmutable($stdClass->last_update),
+        return new RoleExtended(
+            id:              $object->role_id,
+            name:            $object->name,
+            description:     $object->description,
+            active:          $object->active,
+            created:         new DateTimeImmutable($object->created),
+            lastUpdate:      new DateTimeImmutable($object->last_update),
             users:           $users,
             permissions:     $permissions
         );
@@ -200,144 +110,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function fetchAll(): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchLimit(int $offset, int $rowCount): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE.' ORDER BY name ASC LIMIT :offset, :rowcount');
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-        $stmt->bindParam(':rowcount', $rowCount, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByPermission(Permission $permission): array
-    {
-        return $this->fetchByPermissionId($permission->getId());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByPermissionId(int|string $permissionId): array
-    {
-        $stmt = $this->pdo->prepare('
-        SELECT 
-            r.role_id, r.name, r.description, r.active, r.created, r.last_update
-        FROM
-            role AS r
-                INNER JOIN
-            role_permission AS rp ON r.role_id = rp.role_id
-        WHERE
-            rp.permission_id = :id');
-
-        $stmt->bindParam(':id', $permissionId, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByPermissionName(string $permissionName): array
-    {
-        $permission = $this->permissionMapper->fetchByName($permissionName);
-
-        return $this->fetchByPermissionId((int)$permission->getId());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByUser(EnhancedUser $user): array
-    {
-        return $this->fetchByUserId($user->getId());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByUserId(int|string $userId): array
-    {
-        //make query
-        $stmt = $this->pdo->prepare('
-        SELECT 
-            r.role_id, r.name, r.description, r.active, r.created, r.last_update
-        FROM
-            role AS r
-                INNER JOIN
-            user_role AS ur ON r.role_id = ur.role_id
-        WHERE
-            ur.user_id = :id');
-
-        $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
-
-        //fail fast, returns the empty array
-        if (\count($result) === 0) {
-            return $result;
-        }
-
-        //return result
-        return self::hydrator($result);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchByUserName(string $userName): array
-    {
-        $user = $this->userMapper->fetchByName($userName);
-
-        return $this->fetchByUserId($user->getId());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function grantPermission(Role &$role, Permission $permission)
+    public function grantPermission(RoleExtended &$role, Permission $permission)
     {
         $this->grantPermissionById($role, $permission->getId());
     }
@@ -345,7 +118,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function grantPermissionById(Role &$role, int|string $permissionId)
+    public function grantPermissionById(RoleExtended &$role, int|string $permissionId)
     {
         //get values to be passed as reference
         $roleId = $role->getId();
@@ -368,7 +141,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function grantPermissionByName(Role &$role, string $permissionName)
+    public function grantPermissionByName(RoleExtended &$role, string $permissionName)
     {
         $permission = $this->permissionMapper->fetchByName($permissionName);
 
@@ -378,7 +151,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function revokePermission(Role &$role, Permission $permission)
+    public function revokePermission(RoleExtended &$role, Permission $permission)
     {
         $this->revokePermissionById($role, $permission->getId());
     }
@@ -386,7 +159,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function revokePermissionById(Role &$role, int|string $permissionId)
+    public function revokePermissionById(RoleExtended &$role, int|string $permissionId)
     {
         //get values to be passed as reference
         $roleId = $role->getId();
@@ -409,7 +182,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function revokePermissionByName(Role &$role, string $permissionName)
+    public function revokePermissionByName(RoleExtended &$role, string $permissionName)
     {
         $permission = $this->permissionMapper->fetchByName($permissionName);
 
@@ -419,7 +192,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function addUser(Role &$role, EnhancedUser $user)
+    public function addUser(RoleExtended &$role, User $user)
     {
         $this->addUserById($role, $user->getId());
     }
@@ -427,7 +200,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function addUserById(Role &$role, int|string $userId)
+    public function addUserById(RoleExtended &$role, int|string $userId)
     {
         //get values to be passed as reference
         $roleId = $role->getId();
@@ -449,7 +222,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function addUserByName(Role &$role, string $userName)
+    public function addUserByName(RoleExtended &$role, string $userName)
     {
         $user = $this->userMapper->fetchByName($userName);
 
@@ -459,7 +232,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function removeUser(Role &$role, EnhancedUser $user)
+    public function removeUser(RoleExtended &$role, User $user)
     {
         $this->removeUserById($role, $user->getId());
     }
@@ -467,7 +240,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function removeUserById(Role &$role, int|string $userId)
+    public function removeUserById(RoleExtended &$role, int|string $userId)
     {
         //get values to be passed as reference
         $roleId = $role->getId();
@@ -489,7 +262,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     /**
      * {@inheritdoc}
      */
-    public function removeUserByName(Role &$role, string $userName)
+    public function removeUserByName(RoleExtended &$role, string $userName)
     {
         $user = $this->userMapper->fetchByName($userName);
 
