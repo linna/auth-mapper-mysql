@@ -12,17 +12,17 @@ declare(strict_types=1);
 namespace Linna\Authorization;
 
 use Linna\Authentication\Password;
-use Linna\Authentication\UserMapper;
+//use Linna\Authentication\UserMapper;
 use Linna\Storage\StorageFactory;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Role To User Mapper Test.
+ * Role Mapper Test.
  */
-class RoleToUserMapperTest extends TestCase
+class RoleExtendedMapperTest extends TestCase
 {
-    use RoleToUserMapperTrait;
+    //use RoleMapperTrait;
 
     /**
      * Setup.
@@ -47,13 +47,24 @@ class RoleToUserMapperTest extends TestCase
         $password = new Password();
 
         $permissionMapper = new PermissionMapper($pdo);
-        $role2userMapper = new RoleToUserMapper($pdo, $password);
         $userMapper = new UserMapper($pdo, $password);
 
+        $roleExtendedMapper = new RoleExtendedMapper($pdo, $permissionMapper, $userMapper);
+
+        //declared in trait
         self::$pdo = $pdo;
         self::$permissionMapper = $permissionMapper;
-        self::$roleMapper = new RoleMapper($pdo, $permissionMapper, $userMapper, $role2userMapper);
-        self::$enhancedUserMapper = new EnhancedUserMapper($pdo, $password, $permissionMapper, $role2userMapper);
-        self::$roleToUserMapper = $role2userMapper;
+        self::$userMapper = $userMapper;
+        self::$roleExtendedMapper = $roleExtendedMapper;
+    }
+
+    /**
+     * Tear Down.
+     *
+     * @return void
+     */
+    public static function tearDownAfterClass(): void
+    {
+        self::$pdo->exec('ALTER TABLE role AUTO_INCREMENT = 0');
     }
 }

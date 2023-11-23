@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  */
 class UserMapperTest extends TestCase
 {
-    use UserMapperTrait;
+    //use UserMapperTrait;
 
     /**
      * Setup.
@@ -43,6 +43,7 @@ class UserMapperTest extends TestCase
 
         $pdo = (new StorageFactory('pdo', $options))->get();
 
+        //declared in trait
         self::$pdo = $pdo;
         self::$userMapper = new UserMapper($pdo, new Password());
     }

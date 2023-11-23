@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
  */
 class PermissionMapperTest extends TestCase
 {
-    use PermissionMapperTrait;
+    // use PermissionMapperTrait;
 
     /**
      * Setup.
@@ -44,16 +44,12 @@ class PermissionMapperTest extends TestCase
         ];
 
         $pdo = (new StorageFactory('pdo', $options))->get();
-        $password = new Password();
 
         $permissionMapper = new PermissionMapper($pdo);
-        $role2userMapper = new RoleToUserMapper($pdo, $password);
-        $userMapper = new UserMapper($pdo, $password);
 
+        //declared in trait
         self::$pdo = $pdo;
         self::$permissionMapper = $permissionMapper;
-        self::$roleMapper = new RoleMapper($pdo, $permissionMapper, $userMapper, $role2userMapper);
-        self::$enhancedUserMapper = new EnhancedUserMapper($pdo, $password, $permissionMapper, $role2userMapper);
     }
 
     /**

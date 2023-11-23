@@ -11,14 +11,14 @@ declare(strict_types=1);
 
 namespace Linna\Authorization;
 
-use InvalidArgumentException;
+//use InvalidArgumentException;
 use DateTimeImmutable;
 use Linna\DataMapper\DomainObjectInterface;
-use Linna\DataMapper\MapperAbstract;
-use Linna\DataMapper\NullDomainObject;
+//use Linna\DataMapper\MapperAbstract;
+//use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
-use PDO;
-use RuntimeException;
+//use PDO;
+//use RuntimeException;
 use stdClass;
 
 /**
@@ -28,7 +28,7 @@ class PermissionExtendedMapper extends PermissionMapper implements PermissionExt
 {
     //protected const QUERY_BASE = 'SELECT permission_id, name, description, 0 AS inherited, created, last_update FROM permission';
 
-    private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of EnhancedUser class';
+    //private const EXCEPTION_MESSAGE = 'Domain Object parameter must be instance of EnhancedUser class';
 
     /**
      * Constructor.
