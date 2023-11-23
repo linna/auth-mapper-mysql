@@ -98,7 +98,7 @@ class PermissionExtendedMapper extends PermissionMapper implements PermissionExt
             description:     $object->description,
             inherited:       $object->inherited,
             created:         new DateTimeImmutable($object->created),
-            lastUpdate:      new DateTimeImmutable($$object->last_update),
+            lastUpdate:      new DateTimeImmutable($object->last_update),
             users:           $users,
             roles:           $roles
         );
