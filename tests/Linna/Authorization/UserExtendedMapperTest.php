@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
  */
 class UserExtendedMapperTest extends TestCase
 {
-    //use EnhancedUserMapperTrait;
+    use UserExtendedMapperTrait;
 
     /**
      * Setup.

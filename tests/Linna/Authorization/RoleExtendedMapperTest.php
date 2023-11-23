@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
  */
 class RoleExtendedMapperTest extends TestCase
 {
-    //use RoleMapperTrait;
+    use RoleExtendedMapperTrait;
 
     /**
      * Setup.

@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Linna\Authorization;
 
-use Linna\Authentication\Password;
-use Linna\Authentication\UserMapper;
+//use Linna\Authentication\Password;
+//use Linna\Authentication\UserMapper;
 use Linna\Storage\StorageFactory;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
  */
 class RoleMapperTest extends TestCase
 {
-    //use RoleMapperTrait;
+    use RoleMapperTrait;
 
     /**
      * Setup.

@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
  */
 class PermissionExtendedMapperTest extends TestCase
 {
-    //use PermissionMapperTrait;
+    use PermissionExtendedMapperTrait;
 
     /**
      * Setup.

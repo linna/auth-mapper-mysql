@@ -9,7 +9,7 @@
  */
 declare(strict_types=1);
 
-namespace Linna\Authentication;
+namespace Linna\Authorization;
 
 use Linna\Storage\StorageFactory;
 use PDO;
@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  */
 class UserMapperTest extends TestCase
 {
-    //use UserMapperTrait;
+    use UserMapperTrait;
 
     /**
      * Setup.
