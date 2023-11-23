@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Linna\Authorization;
 
+use Linna\Authentication\Password;
 use Linna\Storage\StorageFactory;
 use PDO;
 use PHPUnit\Framework\TestCase;

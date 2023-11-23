@@ -111,9 +111,12 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
      */
     public function fetchByName(string $roleName): DomainObjectInterface
     {
+        //handle user name
+        $hashedRoleName = md5($roleName);
+
         //make query
-        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE name = :name');
-        $stmt->bindParam(':name', $roleName, PDO::PARAM_INT);
+        $stmt = $this->pdo->prepare(self::QUERY_BASE.' WHERE md5(name) = :name');
+        $stmt->bindParam(':name', $hashedRoleName, PDO::PARAM_STR);
         $stmt->execute();
 
         //fail fast
