@@ -398,13 +398,14 @@ class UserMapper extends MapperAbstract implements UserMapperInterface
 
         try {
             //make query
-            $stmt = $this->pdo->prepare('INSERT INTO user (uuid, name, email, description, password, created, last_update) 
-                VALUES (:uuid, :name, :email, :description, :password, :created, :last_update)');
+            $stmt = $this->pdo->prepare('INSERT INTO user (uuid, name, email, description, password, active, created, last_update) 
+                VALUES (:uuid, :name, :email, :description, :password, :active, :created, :last_update)');
             $stmt->bindParam(':uuid', $user->uuid, PDO::PARAM_STR);
             $stmt->bindParam(':name', $user->name, PDO::PARAM_STR);
             $stmt->bindParam(':email', $user->email, PDO::PARAM_STR);
             $stmt->bindParam(':description', $user->description, PDO::PARAM_STR);
             $stmt->bindParam(':password', $user->password, PDO::PARAM_STR);
+            $stmt->bindParam(':active', $user->active, PDO::PARAM_INT);
             $stmt->bindParam(':created', $created, PDO::PARAM_STR);
             $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
 
