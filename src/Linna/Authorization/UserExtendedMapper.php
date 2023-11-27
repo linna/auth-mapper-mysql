@@ -159,7 +159,7 @@ class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterfa
 
         try {
             //make query
-            $stmt = $this->pdo->prepare('INSERT INTO user_permission (user_id, permission_id) VALUES (:user_id, :permission_id)');
+            $stmt = $this->pdo->prepare('INSERT INTO user_permission (user_id, permission_id) VALUES (:user_id, :permission_id) ON DUPLICATE KEY UPDATE user_id = :user_id, permission_id = :permission_id');
 
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $stmt->bindParam(':permission_id', $permissionId, PDO::PARAM_INT);
@@ -241,7 +241,7 @@ class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterfa
 
         try {
             //make query
-            $stmt = $this->pdo->prepare('INSERT INTO user_role (user_id, role_id) VALUES (:user_id, :role_id)');
+            $stmt = $this->pdo->prepare('INSERT INTO user_role (user_id, role_id) VALUES (:user_id, :role_id)  ON DUPLICATE KEY UPDATE user_id = :user_id, role_id = :role_id');
 
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $stmt->bindParam(':role_id', $roleId, PDO::PARAM_INT);
@@ -299,7 +299,7 @@ class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterfa
             $stmt = $this->pdo->prepare('DELETE FROM user_role WHERE role_id = :role_id AND user_id = :user_id');
 
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->bindParam(':role_name', $roleName, PDO::PARAM_STR);
+            $stmt->bindParam(':role_id', $roleName, PDO::PARAM_INT);
             $stmt->execute();
 
             //update current object
