@@ -296,7 +296,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         WHERE
             u.name = :name');
 
-        $stmt->bindParam(':name', $userName, PDO::PARAM_INT);
+        $stmt->bindParam(':name', $userName, PDO::PARAM_STR);
         $stmt->execute();
 
         $result = $stmt->fetchAll(PDO::FETCH_CLASS, stdClass::class);
