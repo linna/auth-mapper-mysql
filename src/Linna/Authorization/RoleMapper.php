@@ -18,7 +18,6 @@ use Linna\DataMapper\MapperAbstract;
 use Linna\DataMapper\NullDomainObject;
 use Linna\Storage\ExtendedPDO;
 use PDO;
-use PDOException;
 use RuntimeException;
 use stdClass;
 
@@ -145,7 +144,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -167,7 +166,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -205,7 +204,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -237,7 +236,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -275,7 +274,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -307,7 +306,7 @@ class RoleMapper extends MapperAbstract implements RoleMapperInterface
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**

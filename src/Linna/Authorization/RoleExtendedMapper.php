@@ -125,7 +125,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
 
         try {
             //make query
-            $stmt = $this->pdo->prepare('INSERT INTO role_permission (role_id, permission_id) VALUES (:role_id, :permission_id)');
+            $stmt = $this->pdo->prepare('INSERT INTO role_permission (role_id, permission_id) VALUES (:role_id, :permission_id) ON DUPLICATE KEY UPDATE role_id = :role_id, permission_id = :permission_id');
 
             $stmt->bindParam(':role_id', $roleId, PDO::PARAM_INT);
             $stmt->bindParam(':permission_id', $permissionId, PDO::PARAM_INT);
@@ -145,7 +145,9 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     {
         $permission = $this->permissionMapper->fetchByName($permissionName);
 
-        $this->grantPermissionById($role, $permission->getId());
+        if ($permission instanceof Permission) {
+            $this->grantPermissionById($role, $permission->getId());
+        }
     }
 
     /**
@@ -186,7 +188,9 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     {
         $permission = $this->permissionMapper->fetchByName($permissionName);
 
-        $this->revokePermissionById($role, $permission->getId());
+        if ($permission instanceof Permission) {
+            $this->revokePermissionById($role, $permission->getId());
+        }
     }
 
     /**
@@ -207,7 +211,7 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
 
         try {
             //make query
-            $stmt = $this->pdo->prepare('INSERT INTO user_role (user_id, role_id) VALUES (:user_id, :role_id)');
+            $stmt = $this->pdo->prepare('INSERT INTO user_role (user_id, role_id) VALUES (:user_id, :role_id) ON DUPLICATE KEY UPDATE role_id = :role_id, user_id = :user_id');
 
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $stmt->bindParam(':role_id', $roleId, PDO::PARAM_INT);
@@ -226,7 +230,9 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     {
         $user = $this->userMapper->fetchByName($userName);
 
-        $this->addUserById($role, $user->getId());
+        if ($user instanceof User) {
+            $this->addUserById($role, $user->getId());
+        }
     }
 
     /**
@@ -266,7 +272,9 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
     {
         $user = $this->userMapper->fetchByName($userName);
 
-        $this->removeUserById($role, $user->getId());
+        if ($user instanceof User) {
+            $this->removeUserById($role, $user->getId());
+        }
     }
 
     /**
@@ -274,85 +282,6 @@ class RoleExtendedMapper extends RoleMapper implements RoleExtendedMapperInterfa
      */
     protected function concreteCreate(): DomainObjectInterface
     {
-        return new Role();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function concreteInsert(DomainObjectInterface &$role): void
-    {
-        \assert($role instanceof Role, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
-
-        //get value to be passed as reference
-        $created = $role->created->format(DATE_ATOM);
-        $lastUpdate = $role->lastUpdate->format(DATE_ATOM);
-
-        try {
-            //make query
-            $stmt = $this->pdo->prepare('INSERT INTO role (name, description, active, created, last_update) VALUES (:name, :description, :active, :created, :last_update)');
-
-            $stmt->bindParam(':name', $role->name, PDO::PARAM_STR);
-            $stmt->bindParam(':description', $role->name, PDO::PARAM_STR);
-            $stmt->bindParam(':active', $role->active, PDO::PARAM_INT);
-            $stmt->bindParam(':created', $created, PDO::PARAM_STR);
-            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
-
-            $stmt->execute();
-
-            $role->setId((int) $this->pdo->lastInsertId());
-        } catch (RuntimeException $e) {
-            echo 'Insert not compled, ', $e->getMessage(), "\n";
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function concreteUpdate(DomainObjectInterface $role): void
-    {
-        \assert($role instanceof Role, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
-
-        //get value to be passed as reference
-        $objId = $role->getId();
-        $lastUpdate = $role->lastUpdate->format(DATE_ATOM);
-
-        try {
-            //make query
-            $stmt = $this->pdo->prepare('UPDATE role SET name = :name, description = :description, active = :active, last_update = :last_update  WHERE (role_id = :id)');
-
-            $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
-            $stmt->bindParam(':name', $role->name, PDO::PARAM_STR);
-            $stmt->bindParam(':description', $role->description, PDO::PARAM_STR);
-            $stmt->bindParam(':active', $role->active, PDO::PARAM_INT);
-            $stmt->bindParam(':last_update', $lastUpdate, PDO::PARAM_STR);
-
-            $stmt->execute();
-        } catch (RuntimeException $e) {
-            echo 'Update not compled, ', $e->getMessage(), "\n";
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function concreteDelete(DomainObjectInterface &$role): void
-    {
-        \assert($role instanceof Role, new InvalidArgumentException(self::EXCEPTION_MESSAGE));
-
-        //get value to be passed as reference
-        $objId = $role->getId();
-
-        try {
-            //make query
-            $stmt = $this->pdo->prepare('DELETE FROM role WHERE role_id = :id');
-
-            $stmt->bindParam(':id', $objId, PDO::PARAM_INT);
-            $stmt->execute();
-
-            $role = new NullDomainObject();
-        } catch (RuntimeException $e) {
-            echo 'Delete not compled, ', $e->getMessage(), "\n";
-        }
+        return new RoleExtended();
     }
 }

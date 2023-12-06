@@ -179,7 +179,9 @@ class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterfa
     {
         $permission = $this->permissionMapper->fetchByName($permissionName);
 
-        $this->grantPermissionById($user, $permission->getId());
+        if ($permission instanceof Permission) {
+            $this->grantPermissionById($user, $permission->getId());
+        }
     }
 
     /**
@@ -220,7 +222,9 @@ class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterfa
     {
         $permission = $this->permissionMapper->fetchByName($permissionName);
 
-        $this->revokePermissionById($user, $permission->getId());
+        if ($permission instanceof Permission) {
+            $this->revokePermissionById($user, $permission->getId());
+        }
     }
 
     /**
@@ -259,22 +263,10 @@ class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterfa
      */
     public function addRoleByName(UserExtended &$user, string $roleName)
     {
-        //get values to be passed as reference
-        $userId = $user->getId();
+        $role = $this->roleMapper->fetchByName($roleName);
 
-        try {
-            //make query
-            $stmt = $this->pdo->prepare('INSERT INTO user_role (user_id, role_id)
-            VALUES (:user_id, (SELECT role_id FROM role WHERE name = :role_name))');
-
-            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->bindParam(':role_name', $roleName, PDO::PARAM_STR);
-            $stmt->execute();
-
-            //update current object
-            $user = $this->fetchById($userId);
-        } catch (PDOException $e) {
-            echo 'Insert not compled, ', $e->getMessage(), "\n";
+        if ($role instanceof Role) {
+            $this->addRoleById($user, $role->getId());
         }
     }
 
@@ -299,7 +291,7 @@ class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterfa
             $stmt = $this->pdo->prepare('DELETE FROM user_role WHERE role_id = :role_id AND user_id = :user_id');
 
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->bindParam(':role_id', $roleName, PDO::PARAM_INT);
+            $stmt->bindParam(':role_id', $roleId, PDO::PARAM_INT);
             $stmt->execute();
 
             //update current object
@@ -314,22 +306,10 @@ class UserExtendedMapper extends UserMapper implements UserExtendedMapperInterfa
      */
     public function removeRoleByName(UserExtended &$user, string $roleName)
     {
-        //get values to be passed as reference
-        $userId = $user->getId();
+        $role = $this->roleMapper->fetchByName($roleName);
 
-        try {
-            //make query
-            $stmt = $this->pdo->prepare('DELETE FROM user_role 
-            WHERE role_id = (SELECT role_id FROM role WHERE name = :role_name) AND user_id = :user_id');
-
-            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->bindParam(':role_name', $roleName, PDO::PARAM_STR);
-            $stmt->execute();
-
-            //update current object
-            $user = $this->fetchById($userId);
-        } catch (PDOException $e) {
-            echo 'Deletion not compled, ', $e->getMessage(), "\n";
+        if ($role instanceof Role) {
+            $this->removeRoleById($user, $role->getId());
         }
     }
 

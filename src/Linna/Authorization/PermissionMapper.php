@@ -144,7 +144,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -166,7 +166,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -204,7 +204,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -237,7 +237,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -288,7 +288,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
@@ -335,7 +335,7 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         }
 
         //return result
-        return self::hydrator($result);
+        return $this->hydrator($result);
     }
 
     /**
