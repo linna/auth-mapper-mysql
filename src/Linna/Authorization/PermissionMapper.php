@@ -219,10 +219,9 @@ class PermissionMapper extends MapperAbstract implements PermissionMapperInterfa
         FROM
             permission AS p
                 INNER JOIN
-            role_permission AS rp
+            role_permission AS rp ON rp.permission_id = p.permission_id
                 INNER JOIN
-            role AS r ON rp.permission_id = p.permission_id
-                AND rp.role_id = r.role_id
+            role AS r ON rp.role_id = r.role_id
         WHERE
             r.name = :name');
 
